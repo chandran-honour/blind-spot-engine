@@ -6,7 +6,7 @@ Blind Spot Engine is an AI-powered web application that helps product builders s
 
 1. **Excluded Personas** — Claude generates 3–5 personas of people this product will *not* serve. The principle: *who you're not designing for clarifies who you are designing for.* This surfaces audience blind spots that typical user research misses.
 
-2. **Stakeholder Gauntlet** — The idea is stress-tested across four stakeholder lenses (Business, Product, Technical, Delivery) in a single pass, surfacing assumptions and anticipated pushback from each angle.
+2. **Stakeholder Gauntlet** — The idea is stress-tested across four stakeholder lenses (Business & Finance, Product & PM, Technical & Engineering, Delivery & Operations) in a single pass, surfacing assumptions and anticipated pushback from each angle.
 
 The product is designed to be fast, focused, and actionable. It is not a general-purpose chat interface — it is a single-purpose thinking tool that returns structured, high-signal output every time.
 
@@ -14,7 +14,7 @@ The product is designed to be fast, focused, and actionable. It is not a general
 
 ## Problem Statement
 
-Decision-makers across business, product, engineering, delivery and personal contexts routinely act on assumptions they haven't examined. Traditional brainstorming and peer review catch some of these, but cognitive biases, group-think, and domain blind spots mean critical risks are routinely missed until it's too late. Blind Spot Engine makes assumption stress-testing fast, low-friction, and available to anyone with a browser.
+Decision-makers across business, product, engineering and delivery routinely act on assumptions they haven't examined. Traditional brainstorming and peer review catch some of these, but cognitive biases, group-think, and domain blind spots mean critical risks are routinely missed until it's too late. Blind Spot Engine makes assumption stress-testing fast, low-friction, and available to anyone with a browser.
 
 ---
 
@@ -24,38 +24,37 @@ Decision-makers across business, product, engineering, delivery and personal con
 - Engineering leads evaluating technical decisions
 - Delivery managers assessing project plans and timelines
 - Consultants preparing for client engagements
-- Individuals facing significant personal decisions
 
 ---
 
 ## Analysis Personas (Lenses)
 
-The analysis lens determines the frame Claude applies when identifying blind spots. Each lens has its own domain heuristics, typical failure modes, and vocabulary.
+The Stakeholder Gauntlet uses four fixed lenses (JSON enum: `business` | `product` | `technical` | `delivery`). Labels in the UI may read more clearly for PMs; the API enum values do not change.
 
-### Business Strategy
-Evaluates claims through the lens of market dynamics, competitive positioning, revenue models, and organisational capability. Surfaces assumptions about customer willingness to pay, market size, competitive moats, and execution capacity.
+### Business & Finance (`business`)
+Unit economics, pricing, ROI, runway, market sizing, and competitive viability — not generic “strategy slides.”
 
-*Example claim: "Our target customers will pay a premium for faster onboarding."*
+### Product & PM (`product`)
+Jobs-to-be-done, PMF signals, adoption, discoverability, and roadmap assumptions — what users actually do vs what we assume.
 
-### Product
-Evaluates claims through the lens of user behaviour, product-market fit, feature discoverability, and adoption patterns. Surfaces assumptions about how users actually interact with a product versus how designers intend them to.
+### Technical & Engineering (`technical`)
+Architecture, scale, reliability, security posture, integrations, and build/maintenance cost — what must be true before we promise it in sales.
 
-*Example claim: "Users will discover this feature naturally through the UI."*
+### Delivery & Operations (`delivery`)
+Scope, timeline, dependencies, capacity, rollout, and operational readiness — including procurement and change management in enterprise contexts.
 
-### Technical
-Evaluates claims through the lens of system architecture, scalability, reliability, and engineering complexity. Surfaces assumptions about performance under load, dependency risk, and technical debt accumulation.
+### Startup vs enterprise framing
 
-*Example claim: "Our current architecture will scale to 10× the current load."*
+The same four lenses apply to every analysis; **context** (product idea + optional user context) steers emphasis:
 
-### Delivery
-Evaluates claims through the lens of project management, resourcing, timelines, dependencies, and delivery risk. Surfaces assumptions about team capacity, scope creep, stakeholder alignment, and the reliability of estimates.
+| Lens | Startup emphasis | Enterprise emphasis |
+|---|---|---|
+| Business & Finance | Runway, PMF, pricing experiments, speed to revenue | Contract economics, renewal risk, compliance cost in P&L |
+| Product & PM | Learning velocity, wedge use case, what to cut | Governance of roadmap, multi-stakeholder buyers, rollout segments |
+| Technical & Engineering | MVP scope, deferrable complexity, ship-to-learn | SSO, audit, residency, security review, integration with legacy |
+| Delivery & Operations | Who ships what by when with a small team | Procurement, legal review cycles, pilots, training, support readiness |
 
-*Example claim: "We can ship the MVP in six weeks with the current team."*
-
-### Personal Decision
-Evaluates claims through the lens of individual psychology, life circumstances, values alignment, and long-term consequences. Surfaces assumptions about motivation, opportunity cost, and the reliability of self-assessment.
-
-*Example claim: "Switching careers now is the right move given my circumstances."*
+In regulated domains (health, fintech, HR, contracts, etc.), the model intensifies compliance and operational-risk questions under **business** and **delivery** — surfacing risks and questions only, never legal advice.
 
 ---
 
@@ -66,7 +65,7 @@ Evaluates claims through the lens of individual psychology, life circumstances, 
 | Framework | Next.js 15 (App Router) | Industry standard, Vercel-native, supports streaming API routes |
 | Language | TypeScript | Type safety across the full stack |
 | Styling | Tailwind CSS v4 + shadcn/ui | Rapid UI development with accessible, composable components |
-| AI | Anthropic Claude API (claude-opus-4-6) | Structured JSON output, streaming, tool use capability |
+| AI | Anthropic Claude API (claude-sonnet-4-6) | Structured JSON output, streaming |
 | Database | Supabase | Postgres + auth + realtime, generous free tier |
 | Deployment | Vercel | Zero-config Next.js deployment, edge functions |
 | IDE | Cursor | AI-assisted development |
@@ -100,21 +99,24 @@ blind-spot-engine/
 ## Components
 
 ### `blind-spot-form.tsx`
-The primary interactive component. Manages all client-side state including the claim input, selected lens, loading state, and parsed results. Handles streaming fetch from the API route, assembling the JSON response chunk by chunk and rendering results as soon as the complete object is available.
+The primary interactive component. Manages product idea input, optional context, loading state, and parsed `ProductAnalysis` results. Handles streaming fetch from the API route, assembling JSON chunk-by-chunk via `partial-json`, and rendering results progressively.
 
 **Props:** none (self-contained)
-**State:** `claim`, `lens`, `context`, `showContext`, `isLoading`, `result`
-**Key behaviour:** ⌘ Enter keyboard shortcut triggers analysis; lens selection updates the textarea placeholder dynamically. An optional collapsible context field ("Add context") allows users to provide background information — team size, constraints, what's at stake — that is appended to the Claude prompt to produce more specific, actionable blind spots.
+**State:** `productIdea`, `context`, `showContext`, `isLoading`, `result`, `error`
+**Key behaviour:** ⌘ Enter triggers analysis. Optional collapsible context (team size, stage, industry, constraints) is sent to the API so Claude can tailor startup vs enterprise emphasis and regulated-domain risk surfacing.
+
+### `excluded-persona-card.tsx`
+Renders one excluded persona from Phase 1: name, exclusion type, significance, why excluded, and design implication.
 
 ### `blind-spot-card.tsx`
-Renders a single blind spot as a card. Displays title, severity badge (colour-coded: red/amber/green), category badge, description, challenge question, and an optional research insight panel.
+Renders one stakeholder challenge from Phase 2: title, severity, lens badge (e.g. Business & Finance), concern, challenge question, optional research insight.
 
-**Props:** `blindSpot: BlindSpot`
+**Props:** `challenge: StakeholderChallenge`
 
 ### `results-panel.tsx`
-Wraps the list of `BlindSpotCard` components. Handles three states: hidden (no analysis run yet), loading (skeleton placeholders), and populated (summary + cards).
+Two-phase layout: Excluded Personas then Stakeholder Gauntlet. Progressive reveal via type guards; skeleton only until first complete card arrives.
 
-**Props:** `result: AnalysisResult | null`, `isLoading: boolean`
+**Props:** `result: Partial<ProductAnalysis> | null`, `isLoading: boolean`
 
 ---
 
@@ -125,84 +127,54 @@ Wraps the list of `BlindSpotCard` components. Handles three states: hidden (no a
 **Request body:**
 ```json
 {
-  "claim": "string — the assumption to stress-test",
-  "lens": "business | product | technical | delivery | personal",
-  "context": "string (optional) — additional background to improve specificity"
+  "product_idea": "string — the product idea to analyse (required)",
+  "audience_mode": "startup | enterprise (optional, default startup) — explicit PM audience for prompt framing",
+  "context": "string (optional) — stage, team, industry, constraints"
 }
 ```
 
-**Response:** A `text/plain` streaming response containing a single JSON object, streamed token-by-token from Claude. The client assembles the stream and parses the complete JSON on receipt.
+**Response:** A `text/plain` streaming response containing a single JSON `ProductAnalysis` object, streamed token-by-token from Claude. The client assembles the stream and parses incrementally with `partial-json`.
 
-**Model:** `claude-opus-4-6`
-**Max tokens:** 2048
+**Model:** `claude-sonnet-4-6`
+**Max tokens:** 3000
 **Streaming:** Yes — `ReadableStream` via Anthropic SDK `.stream()`
 
 ---
 
 ## Data Schema
 
-### `BlindSpot`
+See `types/blind-spot.ts` for the source of truth. Summary:
+
+### `ProductAnalysis`
 ```typescript
-interface BlindSpot {
-  id: string                  // URL-safe slug, e.g. "optimism-bias"
-  title: string               // Short title, max 8 words
-  category: BlindSpotCategory // See below
-  severity: 'high' | 'medium' | 'low'
-  description: string         // 2-3 sentence explanation
-  challenge_question: string  // Sharp re-examination question
-  research_insight?: string   // Optional grounding fact or study
+interface ProductAnalysis {
+  product_idea: string
+  summary: string
+  excluded_personas: ExcludedPersona[]      // 3-5 items
+  stakeholder_challenges: StakeholderChallenge[]  // 1-2 per lens
 }
 ```
 
-### `BlindSpotCategory`
+### `StakeholderLens`
 ```typescript
-type BlindSpotCategory =
-  | 'cognitive-bias'
-  | 'market-assumption'
-  | 'technical-risk'
-  | 'strategic-gap'
-  | 'ethical-concern'
+type StakeholderLens = 'business' | 'product' | 'technical' | 'delivery'
 ```
 
-### `AnalysisResult`
-```typescript
-interface AnalysisResult {
-  claim: string
-  lens: AnalysisLens
-  summary: string             // 2-3 sentence overview
-  blind_spots: BlindSpot[]    // 3-5 items, ordered high → low severity
-}
-```
+UI labels (e.g. "Business & Finance") map to these enum values; do not add a fifth lens without a schema migration.
 
 ---
 
 ## Claude Prompt Design
 
-The system prompt instructs Claude to act as the Blind Spot Engine and return **only valid JSON** matching the `AnalysisResult` schema — no markdown, no preamble. Key constraints enforced in the prompt:
+The system prompt in `app/api/analyze/route.ts` instructs Claude to return **only valid JSON** matching `ProductAnalysis` — no markdown, no preamble. Key constraints:
 
-- 3–5 blind spots returned, ordered by severity
-- `research_insight` should be concrete and verifiable
-- Specificity over generality — no generic platitudes
-- Category and severity values must match the defined enums
-
-### Lens-Specific Instructions
-
-Each analysis lens injects a structured instruction block into the user message at request time, defined in `LENS_PROMPTS` in `app/api/analyze/route.ts`. This makes each persona load-bearing rather than a two-word label that Claude interprets freely.
-
-Each lens instruction specifies:
-- **Failure modes to hunt** — the domain-specific risks and assumptions most likely to be overlooked under that lens
-- **Preferred categories** — which of the five `BlindSpotCategory` values to favour, ensuring category output is coherent with the lens
-- **Evidence base** — the research tradition, literature, or real-world examples Claude should draw on for `research_insight`
-
-| Lens | Failure modes prioritised | Preferred categories |
-|---|---|---|
-| Business Strategy | Willingness to pay, competitive moats, CAC/LTV, distribution | strategic-gap, market-assumption, cognitive-bias |
-| Product | Intention-behaviour gap, discoverability, jobs-to-be-done, proxy metrics | cognitive-bias, strategic-gap, market-assumption |
-| Technical | Scalability ceilings, dependency risk, ops complexity, security assumptions | technical-risk, cognitive-bias, strategic-gap |
-| Delivery | Planning fallacy, scope creep, stakeholder alignment, definition of done | cognitive-bias, strategic-gap, ethical-concern |
-| Personal Decision | Motivation durability, opportunity cost, reversibility, sunk cost thinking | cognitive-bias, ethical-concern, strategic-gap |
-
-The `LENS_PROMPTS` map is typed against `AnalysisLens`, so adding a new lens to the type will produce a compile-time error if the corresponding prompt entry is missing.
+- 3–5 excluded personas, ordered by significance
+- 1–2 stakeholder challenges per lens (`business`, `product`, `technical`, `delivery`)
+- Per-lens failure modes and challenge questions embedded in the system prompt
+- **Business & Finance** framing while JSON enum remains `business`
+- Audience-aware emphasis from `audience_mode` in the request (startup: PMF/runway/speed; enterprise: governance/procurement/security/rollout); defaults to startup if omitted
+- Regulated-domain context: intensify compliance/operational-risk questions under `business` and/or `delivery` — risks and questions only, not legal advice
+- `research_insight` concrete and verifiable where possible; omit if uncertain
 
 ---
 
@@ -213,7 +185,7 @@ The `LENS_PROMPTS` map is typed against `AnalysisLens`, so adding a new lens to 
 - [x] 7 files rewritten — types, API route, form, cards, results panel
 - [x] First live API analysis returning successfully
 - [ ] Error handling UI — graceful failure on API errors / empty responses
-- [ ] Update this REQUIREMENTS.md product overview ← in progress
+- [x] Update REQUIREMENTS.md — lenses, API shape, prompt design
 
 > **Note:** Supabase persistence deliberately deferred. No data collection on public demo URL — no privacy policy required.
 
@@ -252,5 +224,5 @@ The `LENS_PROMPTS` map is typed against `AnalysisLens`, so adding a new lens to 
 ## Known Constraints
 
 - The app requires a valid `ANTHROPIC_API_KEY` at runtime — there is no mock/offline mode
-- Claude responses are non-deterministic; the same claim may produce different blind spots on each run
+- Claude responses are non-deterministic; the same product idea may produce different results on each run
 - The `research_insight` field is currently generated by Claude from training knowledge, not live web search — this will be addressed in the AI Enrichment phase with tool use integration

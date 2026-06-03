@@ -9,10 +9,10 @@ const SEVERITY_STYLES: Record<Severity, string> = {
 }
 
 const STAKEHOLDER_LABELS: Record<StakeholderLens, string> = {
-  business: 'Business Strategy',
-  product: 'Product',
-  technical: 'Technical',
-  delivery: 'Delivery',
+  business: 'Business & Finance',
+  product: 'Product & PM',
+  technical: 'Technical & Engineering',
+  delivery: 'Delivery & Operations',
 }
 
 const STAKEHOLDER_STYLES: Record<StakeholderLens, string> = {

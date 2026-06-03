@@ -5,10 +5,12 @@ import { parse } from 'partial-json'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ResultsPanel } from '@/components/results-panel'
-import type { ProductAnalysis } from '@/types/blind-spot'
+import { cn } from '@/lib/utils'
+import type { AudienceMode, ProductAnalysis } from '@/types/blind-spot'
 
 export function BlindSpotForm() {
   const [productIdea, setProductIdea] = useState('')
+  const [audienceMode, setAudienceMode] = useState<AudienceMode>('startup')
   const [context, setContext] = useState('')
   const [showContext, setShowContext] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -28,6 +30,7 @@ export function BlindSpotForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           product_idea: productIdea.trim(),
+          audience_mode: audienceMode,
           context: context.trim(),
         }),
       })
@@ -75,12 +78,54 @@ export function BlindSpotForm() {
   return (
     <div className="space-y-6">
 
+      {/* Audience mode */}
+      <div className="space-y-2">
+        <span id="audience-mode-label" className="text-sm font-medium text-slate-300">
+          Who are you building for?
+        </span>
+        <div
+          role="radiogroup"
+          aria-labelledby="audience-mode-label"
+          className="grid grid-cols-2 gap-2 p-1 rounded-lg bg-slate-900 border border-slate-700"
+        >
+          {(
+            [
+              { value: 'startup' as const, label: 'Startup / Founder' },
+              { value: 'enterprise' as const, label: 'Enterprise PM' },
+            ] as const
+          ).map(({ value, label }) => {
+            const selected = audienceMode === value
+            return (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => setAudienceMode(value)}
+                className={cn(
+                  'rounded-md px-3 py-2.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
+                  selected
+                    ? 'bg-slate-800 text-slate-50 shadow-sm ring-1 ring-slate-600'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                )}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+        <p className="text-xs text-slate-600">
+          Shapes how challenges are framed — PMF and runway vs governance and rollout.
+        </p>
+      </div>
+
       {/* Product idea input */}
       <div className="space-y-3">
-        <label className="text-sm font-medium text-slate-300">
+        <label htmlFor="product-idea" className="text-sm font-medium text-slate-300">
           Describe your product idea
         </label>
         <Textarea
+          id="product-idea"
           placeholder="e.g. A mobile app that helps freelancers track their time and invoice clients automatically..."
           value={productIdea}
           onChange={(e) => setProductIdea(e.target.value)}
@@ -132,10 +177,10 @@ export function BlindSpotForm() {
         {isLoading ? (
           <span className="flex items-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-white/60 animate-pulse" />
-            Running the gauntlet...
+            Running Stakeholder Challenge...
           </span>
         ) : (
-          'Run the Blind Spot Engine'
+          'Run Blind Spot'
         )}
       </Button>
 
