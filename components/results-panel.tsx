@@ -52,7 +52,7 @@ function LoadingSkeleton() {
     <div className="space-y-8">
       <div className="flex items-center gap-2 text-slate-400 text-sm">
         <span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-        <span>Running the Blind Spot Engine...</span>
+        <span>Running Blind Spot...</span>
       </div>
 
       <div className="space-y-3">
@@ -146,12 +146,12 @@ export function ResultsPanel({ result, isLoading, error }: ResultsPanelProps) {
             </div>
           )}
 
-          {/* Phase 2 — Stakeholder Gauntlet */}
+          {/* Phase 2 — Stakeholder Challenge */}
           {challenges.length > 0 && (
             <div className="space-y-4">
               <div>
                 <h2 className="text-base font-semibold text-slate-100">
-                  Stakeholder Gauntlet
+                  Stakeholder Challenge
                 </h2>
                 <p className="text-slate-500 text-sm mt-0.5">
                   {challenges.length} {challenges.length === 1 ? 'challenge' : 'challenges'} across {STAKEHOLDER_ORDER.length} perspectives

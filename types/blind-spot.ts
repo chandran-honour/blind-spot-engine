@@ -1,4 +1,12 @@
 // -------------------------------------------------------
+// Audience mode — startup vs enterprise PM framing
+// -------------------------------------------------------
+
+export type AudienceMode = 'startup' | 'enterprise'
+
+export const AUDIENCE_MODES: AudienceMode[] = ['startup', 'enterprise']
+
+// -------------------------------------------------------
 // Phase 1 — Excluded Personas
 // People this product will not serve well
 // -------------------------------------------------------
