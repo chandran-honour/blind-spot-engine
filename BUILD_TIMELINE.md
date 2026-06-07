@@ -48,8 +48,8 @@
 ## MODE 2 — Mon 1 – Sun 7 Jun (3–4h/day × 7 = ~24h)
 - [x] Streaming UX polish — progressive card reveal as JSON streams in
 - [ ] Prompt refinement based on real test results
-- [ ] Share link for individual analyses (unique URL per analysis)
-- [ ] Copy-to-clipboard on results
+- [ ] ~~Share link for individual analyses~~ — deferred (no DB persistence on hackathon demo)
+- [x] Copy-to-clipboard on results
 
 ---
 
@@ -61,6 +61,7 @@
 - [ ] Custom domain (optional)
 - [ ] Environment variable audit — confirm no secrets in git history
 - [ ] Performance review — API response times, streaming UX
+- [ ] Install and set up Novus.ai agent
 
 ---
 
@@ -80,10 +81,10 @@
 | Prep | 24 May | 1h | ✅ Done |
 | Day 1 Scaffold | 25 May | 3h | ✅ Done |
 | Kids Week Evenings | 26–29 May | 6h | ✅ Done |
-| Mode 1 — Core | 30–31 May | 9h | 🔄 In progress |
-| Mode 2 — AI Enrichment | 1–7 Jun | 24h | ⬜ Upcoming |
+| Mode 1 — Core | 30–31 May | 9h | ✅ Done |
+| Mode 2 — AI Enrichment | 1–7 Jun | 24h | 🔄 In progress |
 | Polish & Deploy | 8–13 Jun | 18h | ⬜ Upcoming |
 | Submit | 14–20 Jun | 14h | ⬜ Upcoming |
 | **Total** | | **~75h** | |
 
-> Actual spend to date: ~7–8h (on track)
+> Actual spend to date: ~30h (estimated from build timeline + Cursor chat sessions, Jun 2026)

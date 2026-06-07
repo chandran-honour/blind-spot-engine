@@ -7,6 +7,34 @@ export type AudienceMode = 'startup' | 'enterprise'
 export const AUDIENCE_MODES: AudienceMode[] = ['startup', 'enterprise']
 
 // -------------------------------------------------------
+// Optional structured context (concatenated for API)
+// -------------------------------------------------------
+
+export interface ContextFields {
+  targetMarket: string
+  stageOfDevelopment: string
+  teamConstraints: string
+  validated: string
+}
+
+const CONTEXT_SECTION_LABELS: { key: keyof ContextFields; label: string }[] = [
+  { key: 'targetMarket', label: 'Target market' },
+  { key: 'stageOfDevelopment', label: 'Stage of development' },
+  { key: 'teamConstraints', label: 'Team constraints' },
+  { key: 'validated', label: "What's already been validated" },
+]
+
+/** Joins non-empty structured fields into a single context string for POST /api/analyze. */
+export function buildContextString(fields: ContextFields): string {
+  return CONTEXT_SECTION_LABELS.map(({ key, label }) => {
+    const value = fields[key].trim()
+    return value ? `${label}: ${value}` : null
+  })
+    .filter((line): line is string => line !== null)
+    .join('\n')
+}
+
+// -------------------------------------------------------
 // Phase 1 — Excluded Personas
 // People this product will not serve well
 // -------------------------------------------------------

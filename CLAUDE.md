@@ -2,10 +2,12 @@
 
 ## What this project is
 
-Blind Spot Engine is an AI-powered web app for product managers and founders. It takes a product idea as input and runs two sequential analyses:
+Blind Spot Engine is an AI-powered web app for product managers and founders. Users describe a product idea, choose **startup/founder** or **enterprise PM** audience mode, optionally add structured context, and the engine runs two sequential analyses:
 
 1. **Excluded Personas** — who the product is *not* designed for, surfacing unexamined assumptions about the target audience
-2. **Stakeholder Gauntlet** — challenges from four lenses (`business` | `product` | `technical` | `delivery`; UI labels e.g. Business & Finance). The UI sends `audience_mode` (`startup` | `enterprise`, default startup) to `/api/analyze` for explicit prompt framing; regulated domains surface compliance risks as questions only (not legal advice).
+2. **Stakeholder Challenge** — stress-tests the idea across four lenses (`business` | `product` | `technical` | `delivery`; UI labels e.g. Business & Finance). The UI sends `audience_mode` (`startup` | `enterprise`, default startup) to `/api/analyze` for explicit prompt framing; regulated domains surface compliance risks as questions only (not legal advice).
+
+When analysis completes, users can **copy a markdown report** to the clipboard. Results live in browser memory only — nothing is saved to a database on the hackathon demo.
 
 Built as a solo hackathon entry for the [Mind the Product World Product Hackathon](https://mindtheproduct.devpost.com), deadline 20 June 2026. Also serves as a portfolio project for an AI product management role.
 
@@ -40,15 +42,20 @@ blind-spot-engine/
 │   └── page.tsx                      # Main page — renders BlindSpotForm
 ├── components/
 │   ├── ui/                           # shadcn/ui primitives (auto-generated, do not edit)
-│   ├── blind-spot-form.tsx           # Main form — product idea input, context toggle, streaming fetch
+│   ├── blind-spot-form.tsx           # Main form — audience mode, product idea, structured context, streaming fetch
 │   ├── excluded-persona-card.tsx     # Phase 1 card — excluded persona
-│   ├── blind-spot-card.tsx           # Phase 2 card — stakeholder challenge
-│   └── results-panel.tsx             # Two-phase results layout with progressive reveal
+│   ├── blind-spot-card.tsx           # Phase 2 card — StakeholderChallengeCard
+│   ├── results-panel.tsx             # Summary, legends, progressive results, copy button
+│   ├── section-legend.tsx            # “How to read these cards” block
+│   └── copy-report-button.tsx        # Clipboard export when analysis complete
 ├── lib/
-│   └── supabase/
-│       ├── client.ts                 # Supabase client (configured, not wired into demo)
-│       ├── db.ts                     # save/fetch helpers (ready for future use)
-│       └── types.ts                  # Database row types
+│   ├── format-analysis.ts            # Markdown report for clipboard
+│   ├── label-copy.ts                 # Legend and badge dimension copy
+│   ├── analysis-guards.ts            # Streaming completeness type guards
+│   └── supabase/                     # Scaffold only — not used at runtime
+│       ├── client.ts
+│       ├── db.ts
+│       └── types.ts
 ├── types/
 │   └── blind-spot.ts                 # Shared TypeScript interfaces
 ├── supabase/
@@ -76,11 +83,16 @@ Required in `.env.local`:
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Optional (scaffold only, not used at runtime):
+
+```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-The app will not function without `ANTHROPIC_API_KEY`. Supabase variables are present but persistence is not wired into the demo.
+The app will not function without `ANTHROPIC_API_KEY`. `NEXT_PUBLIC_SUPABASE_*` vars are optional — Supabase scaffold (`lib/supabase/`, `supabase/schema.sql`) has no runtime imports. The hackathon demo does not persist analyses or offer share links; product ideas and results exist only in the browser session until the page is closed or refreshed.
 
 ---
 
@@ -88,11 +100,19 @@ The app will not function without `ANTHROPIC_API_KEY`. Supabase variables are pr
 
 ### API route (`app/api/analyze/route.ts`)
 
-- Accepts `POST` with `{ product_idea: string, context?: string }`
+- Accepts `POST` with `{ product_idea: string, audience_mode?: 'startup' | 'enterprise', context?: string }`
+- `audience_mode` defaults to `startup`; invalid values return 400. Prepends an audience instruction block to the user message
+- `context` is a single string built from optional structured form fields via `buildContextString()` in `types/blind-spot.ts`; omitted when all fields empty
 - Streams a single JSON object from Claude using `client.messages.stream()`
 - Model: `claude-sonnet-4-6`, max tokens: 3000
 - `export const maxDuration = 60` prevents Vercel timeout
 - Returns `text/plain` streaming response — no SSE, raw token stream
+
+### Audience mode & structured context (`components/blind-spot-form.tsx`)
+
+- Radio selector **“Who are you building for?”** — `startup` (default) or `enterprise` (`AudienceMode` in `types/blind-spot.ts`)
+- Collapsible structured context fields (`ContextFields`): target market, stage of development, team constraints, what's already been validated
+- POST body: `product_idea`, `audience_mode`, `context` (when non-empty)
 
 ### Client-side streaming (`components/blind-spot-form.tsx`)
 
@@ -101,9 +121,11 @@ The app will not function without `ANTHROPIC_API_KEY`. Supabase variables are pr
 - Sets `result` state as a `Partial<ProductAnalysis>` on each chunk
 - Cards render progressively as each object becomes complete
 
-### Progressive reveal (`components/results-panel.tsx`)
+### Progressive reveal & copy report (`components/results-panel.tsx`)
 
-- `isPersonaComplete()` and `isChallengeComplete()` type guards — only render cards with all required fields present
+- `isPersonaComplete()` and `isChallengeComplete()` in `lib/analysis-guards.ts` — only render cards with all required fields present
+- `isProductAnalysisComplete()` gates `CopyReportButton`; formats in-memory result via `formatAnalysisForClipboard()` in `lib/format-analysis.ts`
+- `SectionLegend` above each results block — copy from `lib/label-copy.ts` (`PERSONA_LEGEND_*`, `CHALLENGE_LEGEND_*`, `BADGE_DIMENSION_LABELS`)
 - Skeleton shows only while no content has arrived yet
 - Live `…` pulse indicator while still loading
 - `animate-card-in` CSS class fades each card in as it appears (defined in `globals.css`)
@@ -169,13 +191,13 @@ The app will not function without `ANTHROPIC_API_KEY`. Supabase variables are pr
 
 ## Supabase setup (for future reference)
 
-Schema is defined in `supabase/schema.sql`. Single table: `analyses`. RLS enabled with permissive anon policies (insert + select). Session history is not wired into the current demo — the Supabase client and `db.ts` helpers are ready but unused.
+Schema is defined in `supabase/schema.sql`. Single table: `analyses`. RLS enabled with permissive anon policies (insert + select). Persistence and share links are disabled for the hackathon demo — `lib/supabase/` remains as unused scaffold. Copy-to-clipboard is the supported export path.
 
-To activate persistence:
+To activate persistence later:
 
-1. Call `saveAnalysis()` from `lib/supabase/db.ts` after a successful stream completes in the API route
-2. Generate a session UUID client-side (localStorage) and pass it with each request
-3. Build a history view using `getSessionAnalyses(sessionId)`
+1. Call `saveProductAnalysis()` from `lib/supabase/db.ts` after a successful stream completes
+2. Generate a session UUID client-side (localStorage) and pass it with each save
+3. Add `/analysis/[id]` page and share-link UI; restore `lib/supabase/map.ts` row mapper
 
 ---
 
@@ -185,8 +207,8 @@ To activate persistence:
 
 - Streaming progressive reveal (partial-json)
 - Prompt refinement — run test analyses, tighten system prompt
-- Copy-to-clipboard on results
-- Share link (unique URL per analysis)
+- ~~Copy-to-clipboard on results~~ — done (`CopyReportButton`, `lib/format-analysis.ts`)
+- ~~Share link~~ — deferred (no DB persistence on hackathon demo)
 
 ### Polish & Deploy (8–13 Jun)
 
@@ -209,5 +231,5 @@ To activate persistence:
 - All components are named exports (not default exports) except `app/page.tsx`
 - `'use client'` directive on all interactive components
 - Error messages are user-friendly strings set via `setError()` in the form — never shown as browser alerts
-- The `blind-spot-card.tsx` component is named for historical reasons but renders `StakeholderChallenge` objects (Phase 2), not generic blind spots
+- The `blind-spot-card.tsx` component is named for historical reasons but exports `StakeholderChallengeCard` and renders `StakeholderChallenge` objects (Phase 2), not generic blind spots
 

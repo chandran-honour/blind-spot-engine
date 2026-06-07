@@ -3,12 +3,19 @@
 import { Skeleton } from '@/components/ui/skeleton'
 import { ExcludedPersonaCard } from '@/components/excluded-persona-card'
 import { StakeholderChallengeCard } from '@/components/blind-spot-card'
-import type {
-  ProductAnalysis,
-  ExcludedPersona,
-  StakeholderChallenge,
-  StakeholderLens,
-} from '@/types/blind-spot'
+import { SectionLegend } from '@/components/section-legend'
+import {
+  PERSONA_LEGEND_TITLE,
+  PERSONA_LEGEND_LINES,
+  CHALLENGE_LEGEND_LINES,
+} from '@/lib/label-copy'
+import { CopyReportButton } from '@/components/copy-report-button'
+import {
+  isChallengeComplete,
+  isPersonaComplete,
+  isProductAnalysisComplete,
+} from '@/lib/analysis-guards'
+import type { ProductAnalysis, StakeholderLens } from '@/types/blind-spot'
 
 interface ResultsPanelProps {
   result: Partial<ProductAnalysis> | null
@@ -17,35 +24,6 @@ interface ResultsPanelProps {
 }
 
 const STAKEHOLDER_ORDER: StakeholderLens[] = ['business', 'product', 'technical', 'delivery']
-
-// Only render a persona card when all required fields are present
-function isPersonaComplete(p: unknown): p is ExcludedPersona {
-  if (!p || typeof p !== 'object') return false
-  const persona = p as Partial<ExcludedPersona>
-  return !!(
-    persona.id &&
-    persona.name &&
-    persona.description &&
-    persona.why_excluded &&
-    persona.design_implication &&
-    persona.exclusion_type &&
-    persona.significance
-  )
-}
-
-// Only render a challenge card when all required fields are present
-function isChallengeComplete(c: unknown): c is StakeholderChallenge {
-  if (!c || typeof c !== 'object') return false
-  const challenge = c as Partial<StakeholderChallenge>
-  return !!(
-    challenge.id &&
-    challenge.stakeholder &&
-    challenge.title &&
-    challenge.concern &&
-    challenge.challenge_question &&
-    challenge.severity
-  )
-}
 
 function LoadingSkeleton() {
   return (
@@ -86,12 +64,17 @@ function LoadingSkeleton() {
   )
 }
 
-export function ResultsPanel({ result, isLoading, error }: ResultsPanelProps) {
+export function ResultsPanel({
+  result,
+  isLoading,
+  error,
+}: ResultsPanelProps) {
   if (!isLoading && !result && !error) return null
 
   const personas = (result?.excluded_personas ?? []).filter(isPersonaComplete)
   const challenges = (result?.stakeholder_challenges ?? []).filter(isChallengeComplete)
   const hasContent = result?.summary || personas.length > 0 || challenges.length > 0
+  const canCopyReport = !isLoading && isProductAnalysisComplete(result)
 
   return (
     <div className="mt-8 space-y-5">
@@ -113,6 +96,12 @@ export function ResultsPanel({ result, isLoading, error }: ResultsPanelProps) {
       {/* Render content progressively as it streams in */}
       {hasContent && (
         <div className="space-y-10">
+
+          {canCopyReport && (
+            <div className="flex justify-end animate-card-in">
+              <CopyReportButton analysis={result} />
+            </div>
+          )}
 
           {/* Summary */}
           {result?.summary && (
@@ -136,6 +125,10 @@ export function ResultsPanel({ result, isLoading, error }: ResultsPanelProps) {
                   {isLoading && <span className="text-blue-500 ml-1 animate-pulse">…</span>}
                 </p>
               </div>
+              <SectionLegend
+                title={PERSONA_LEGEND_TITLE}
+                lines={[...PERSONA_LEGEND_LINES]}
+              />
               <div className="space-y-3">
                 {personas.map((persona) => (
                   <div key={persona.id} className="animate-card-in">
@@ -158,6 +151,10 @@ export function ResultsPanel({ result, isLoading, error }: ResultsPanelProps) {
                   {isLoading && <span className="text-blue-500 ml-1 animate-pulse">…</span>}
                 </p>
               </div>
+              <SectionLegend
+                title={PERSONA_LEGEND_TITLE}
+                lines={[...CHALLENGE_LEGEND_LINES]}
+              />
               <div className="space-y-3">
                 {STAKEHOLDER_ORDER.flatMap((lens) =>
                   challenges
