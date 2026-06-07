@@ -1,44 +1,48 @@
-import { supabase } from './client'
-import type { AnalysisRow } from './types'
-import type { AnalysisResult, AnalysisLens } from '@/types/blind-spot'
+import type { AudienceMode, ProductAnalysis } from '@/types/blind-spot'
+import { supabase, isSupabaseConfigured } from './client'
+import type { AnalysisInsert, AnalysisRow } from './types'
 
-// -------------------------------------------------------
-// Save a completed analysis to Supabase
-// -------------------------------------------------------
+export { isSupabaseConfigured }
 
-export async function saveAnalysis(
-  result: AnalysisResult,
-  sessionId: string,
+export interface SaveProductAnalysisOptions {
   context?: string
-): Promise<AnalysisRow | null> {
+  audience_mode?: AudienceMode
+}
+
+export async function saveProductAnalysis(
+  analysis: ProductAnalysis,
+  sessionId: string,
+  options?: SaveProductAnalysisOptions
+): Promise<string | null> {
+  if (!supabase) return null
+
+  const row: AnalysisInsert = {
+    session_id: sessionId,
+    product_idea: analysis.product_idea,
+    summary: analysis.summary,
+    context: options?.context?.trim() || null,
+    audience_mode: options?.audience_mode ?? 'startup',
+    excluded_personas: analysis.excluded_personas,
+    stakeholder_challenges: analysis.stakeholder_challenges,
+  }
+
   const { data, error } = await supabase
     .from('analyses')
-    .insert({
-      session_id: sessionId,
-      claim: result.claim,
-      lens: result.lens,
-      context: context ?? null,
-      summary: result.summary,
-      blind_spots: result.blind_spots,
-    })
-    .select()
-    .single()
+    .insert(row)
+    .select('id')
+    .single<{ id: string }>()
 
   if (error) {
     console.error('Failed to save analysis:', error.message)
     return null
   }
 
-  return data
+  return data?.id ?? null
 }
 
-// -------------------------------------------------------
-// Fetch all analyses for a given session (history view)
-// -------------------------------------------------------
+export async function getSessionAnalyses(sessionId: string): Promise<AnalysisRow[]> {
+  if (!supabase) return []
 
-export async function getSessionAnalyses(
-  sessionId: string
-): Promise<AnalysisRow[]> {
   const { data, error } = await supabase
     .from('analyses')
     .select('*')
@@ -50,19 +54,17 @@ export async function getSessionAnalyses(
     return []
   }
 
-  return data ?? []
+  return (data ?? []) as AnalysisRow[]
 }
 
-// -------------------------------------------------------
-// Fetch a single analysis by ID
-// -------------------------------------------------------
-
 export async function getAnalysis(id: string): Promise<AnalysisRow | null> {
+  if (!supabase) return null
+
   const { data, error } = await supabase
     .from('analyses')
     .select('*')
     .eq('id', id)
-    .single()
+    .single<AnalysisRow>()
 
   if (error) {
     console.error('Failed to fetch analysis:', error.message)

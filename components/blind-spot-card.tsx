@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { BADGE_DIMENSION_LABELS } from '@/lib/label-copy'
 import type { StakeholderChallenge, StakeholderLens, Severity } from '@/types/blind-spot'
 
 const SEVERITY_STYLES: Record<Severity, string> = {
@@ -30,22 +31,32 @@ export function StakeholderChallengeCard({ challenge }: StakeholderChallengeCard
   return (
     <Card className="bg-slate-900 border-slate-800 hover:border-slate-700 transition-colors duration-200">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="font-semibold text-slate-100 leading-snug text-base">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <h3 className="font-semibold text-slate-100 leading-snug text-base min-w-0">
             {challenge.title}
           </h3>
-          <div className="flex items-center gap-2 shrink-0 pt-0.5">
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${SEVERITY_STYLES[challenge.severity]}`}
-            >
-              {challenge.severity}
-            </span>
-            <Badge
-              variant="outline"
-              className={`text-xs whitespace-nowrap ${STAKEHOLDER_STYLES[challenge.stakeholder]}`}
-            >
-              {STAKEHOLDER_LABELS[challenge.stakeholder]}
-            </Badge>
+          <div className="flex flex-wrap items-end gap-3 sm:shrink-0">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                {BADGE_DIMENSION_LABELS.severity}
+              </span>
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${SEVERITY_STYLES[challenge.severity]}`}
+              >
+                {challenge.severity}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                {BADGE_DIMENSION_LABELS.lens}
+              </span>
+              <Badge
+                variant="outline"
+                className={`text-xs whitespace-nowrap w-fit ${STAKEHOLDER_STYLES[challenge.stakeholder]}`}
+              >
+                {STAKEHOLDER_LABELS[challenge.stakeholder]}
+              </Badge>
+            </div>
           </div>
         </div>
       </CardHeader>

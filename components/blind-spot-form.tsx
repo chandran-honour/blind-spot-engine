@@ -3,19 +3,39 @@
 import { useState } from 'react'
 import { parse } from 'partial-json'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ResultsPanel } from '@/components/results-panel'
 import { cn } from '@/lib/utils'
-import type { AudienceMode, ProductAnalysis } from '@/types/blind-spot'
+import {
+  buildContextString,
+  type AudienceMode,
+  type ContextFields,
+  type ProductAnalysis,
+} from '@/types/blind-spot'
+
+const EMPTY_CONTEXT_FIELDS: ContextFields = {
+  targetMarket: '',
+  stageOfDevelopment: '',
+  teamConstraints: '',
+  validated: '',
+}
+
+const contextFieldClassName =
+  'bg-slate-900 border-slate-700 text-slate-50 placeholder:text-slate-500 focus-visible:ring-blue-500/30 focus-visible:border-blue-500 text-sm'
 
 export function BlindSpotForm() {
   const [productIdea, setProductIdea] = useState('')
   const [audienceMode, setAudienceMode] = useState<AudienceMode>('startup')
-  const [context, setContext] = useState('')
+  const [contextFields, setContextFields] = useState<ContextFields>(EMPTY_CONTEXT_FIELDS)
   const [showContext, setShowContext] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<Partial<ProductAnalysis> | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const updateContextField = (key: keyof ContextFields, value: string) => {
+    setContextFields((prev) => ({ ...prev, [key]: value }))
+  }
 
   const handleAnalyse = async () => {
     if (!productIdea.trim() || isLoading) return
@@ -24,6 +44,8 @@ export function BlindSpotForm() {
     setResult(null)
     setError(null)
 
+    const context = buildContextString(contextFields)
+
     try {
       const response = await fetch('/api/analyze', {
         method: 'POST',
@@ -31,7 +53,7 @@ export function BlindSpotForm() {
         body: JSON.stringify({
           product_idea: productIdea.trim(),
           audience_mode: audienceMode,
-          context: context.trim(),
+          context,
         }),
       })
 
@@ -139,7 +161,7 @@ export function BlindSpotForm() {
         </p>
       </div>
 
-      {/* Optional context */}
+      {/* Optional structured context */}
       <div>
         <button
           type="button"
@@ -154,13 +176,59 @@ export function BlindSpotForm() {
         </button>
 
         {showContext && (
-          <div className="mt-3 space-y-2">
-            <Textarea
-              placeholder="Tell us more — target market, stage of development, team constraints, what's already been validated..."
-              value={context}
-              onChange={(e) => setContext(e.target.value)}
-              className="min-h-[90px] bg-slate-900 border-slate-700 text-slate-50 placeholder:text-slate-500 resize-none focus-visible:ring-blue-500/30 focus-visible:border-blue-500 text-sm"
-            />
+          <div className="mt-3 space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="context-target-market" className="text-sm font-medium text-slate-300">
+                Target market
+              </label>
+              <Input
+                id="context-target-market"
+                placeholder="e.g. Independent dental clinics in the UK"
+                value={contextFields.targetMarket}
+                onChange={(e) => updateContextField('targetMarket', e.target.value)}
+                className={cn('h-10', contextFieldClassName)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="context-stage" className="text-sm font-medium text-slate-300">
+                Stage of development
+              </label>
+              <Input
+                id="context-stage"
+                placeholder="e.g. Early discovery with concept mockups prepared"
+                value={contextFields.stageOfDevelopment}
+                onChange={(e) => updateContextField('stageOfDevelopment', e.target.value)}
+                className={cn('h-10', contextFieldClassName)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="context-team" className="text-sm font-medium text-slate-300">
+                Team constraints
+              </label>
+              <Textarea
+                id="context-team"
+                placeholder="e.g. Small team, limited clinical advisor time, no deep EHR integration yet"
+                value={contextFields.teamConstraints}
+                onChange={(e) => updateContextField('teamConstraints', e.target.value)}
+                className={cn('min-h-[72px] resize-none', contextFieldClassName)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="context-validated" className="text-sm font-medium text-slate-300">
+                What&apos;s already been validated
+              </label>
+              <Textarea
+                id="context-validated"
+                placeholder="e.g. Demand signal from dentist interviews for faster intake workflows"
+                value={contextFields.validated}
+                onChange={(e) => updateContextField('validated', e.target.value)}
+                className={cn('min-h-[72px] resize-none', contextFieldClassName)}
+              />
+            </div>
+
             <p className="text-xs text-slate-600">
               The more context you provide, the more specific and actionable the analysis will be.
             </p>
@@ -184,7 +252,11 @@ export function BlindSpotForm() {
         )}
       </Button>
 
-      <ResultsPanel result={result} isLoading={isLoading} error={error} />
+      <ResultsPanel
+        result={result}
+        isLoading={isLoading}
+        error={error}
+      />
     </div>
   )
 }

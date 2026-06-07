@@ -2,11 +2,13 @@
 
 ## Product Overview
 
-Blind Spot Engine is an AI-powered web application that helps product builders surface the hidden risks in their ideas — before they ship. Users describe a product idea and the engine runs two phases automatically:
+Blind Spot Engine is an AI-powered web application that helps product builders surface the hidden risks in their ideas — before they ship. Users describe a product idea, choose whether they are building as a **startup/founder** or **enterprise PM**, optionally add structured context, and the engine runs two phases automatically:
 
 1. **Excluded Personas** — Claude generates 3–5 personas of people this product will *not* serve. The principle: *who you're not designing for clarifies who you are designing for.* This surfaces audience blind spots that typical user research misses.
 
-2. **Stakeholder Gauntlet** — The idea is stress-tested across four stakeholder lenses (Business & Finance, Product & PM, Technical & Engineering, Delivery & Operations) in a single pass, surfacing assumptions and anticipated pushback from each angle.
+2. **Stakeholder Challenge** — The idea is stress-tested across four stakeholder lenses (Business & Finance, Product & PM, Technical & Engineering, Delivery & Operations) in a single pass, surfacing assumptions and anticipated pushback from each angle.
+
+When analysis completes, users can **copy a markdown-formatted report** to the clipboard for sharing in docs, Slack, or email. Results live in browser memory only — nothing is saved to a database on the hackathon demo.
 
 The product is designed to be fast, focused, and actionable. It is not a general-purpose chat interface — it is a single-purpose thinking tool that returns structured, high-signal output every time.
 
@@ -27,9 +29,18 @@ Decision-makers across business, product, engineering and delivery routinely act
 
 ---
 
-## Analysis Personas (Lenses)
+## Analysis Lenses (Stakeholder Challenge)
 
-The Stakeholder Gauntlet uses four fixed lenses (JSON enum: `business` | `product` | `technical` | `delivery`). Labels in the UI may read more clearly for PMs; the API enum values do not change.
+Phase 2 uses four fixed lenses. JSON enum values are stable; UI labels are PM-friendly.
+
+| JSON enum | UI label |
+|---|---|
+| `business` | Business & Finance |
+| `product` | Product & PM |
+| `technical` | Technical & Engineering |
+| `delivery` | Delivery & Operations |
+
+Claude returns 1–2 challenges per lens, ordered by severity within each lens. The results panel groups challenges in lens order (`business` → `product` → `technical` → `delivery`).
 
 ### Business & Finance (`business`)
 Unit economics, pricing, ROI, runway, market sizing, and competitive viability — not generic “strategy slides.”
@@ -45,7 +56,7 @@ Scope, timeline, dependencies, capacity, rollout, and operational readiness — 
 
 ### Startup vs enterprise framing
 
-The same four lenses apply to every analysis; **context** (product idea + optional user context) steers emphasis:
+The same four lenses apply to every analysis. **Audience mode** (user-selected) and **context** (product idea + optional structured fields) steer emphasis:
 
 | Lens | Startup emphasis | Enterprise emphasis |
 |---|---|---|
@@ -58,6 +69,86 @@ In regulated domains (health, fintech, HR, contracts, etc.), the model intensifi
 
 ---
 
+## Audience Mode (Startup / Enterprise)
+
+A radio-group selector on the form asks **“Who are you building for?”** before the product idea field.
+
+| Value | UI label | Default |
+|---|---|---|
+| `startup` | Startup / Founder | Yes |
+| `enterprise` | Enterprise PM | |
+
+**Form state:** `audienceMode` (`AudienceMode` in `types/blind-spot.ts`)
+
+**API:** Sent as `audience_mode` on `POST /api/analyze`. Invalid values return 400; omitted values default to `startup`.
+
+**Prompt effect:** `route.ts` prepends an audience instruction block to the user message. Startup mode prioritises PMF, runway, speed to learning, and scope discipline. Enterprise mode prioritises governance, procurement, security review, integration debt, rollout, and contract/compliance cost. The system prompt tells Claude to honour the explicit selection even when context suggests the other mode (with at most one brief trade-off note).
+
+---
+
+## Structured Context Fields
+
+Optional collapsible fields on the form improve specificity. Labels in the UI:
+
+| Field key | Form label |
+|---|---|
+| `targetMarket` | Target market |
+| `stageOfDevelopment` | Stage of development |
+| `teamConstraints` | Team constraints |
+| `validated` | What's already been validated |
+
+**Form state:** `contextFields` (`ContextFields` in `types/blind-spot.ts`), toggled via “Add context” / “Hide context”.
+
+**Submission:** `buildContextString()` in `types/blind-spot.ts` joins non-empty fields into labeled lines, e.g. `Target market: Independent dental clinics in the UK`, separated by newlines. If all fields are empty, `context` is omitted from the request body (empty string is not sent as meaningful context).
+
+**API:** Single `context` string on `POST /api/analyze`, appended to the user message as `Additional context: …` when non-empty.
+
+---
+
+## Results Presentation: Labels, Legends & Copy Report
+
+### Card badges and micro-labels
+
+Persona and challenge cards show dimension micro-labels (from `BADGE_DIMENSION_LABELS` in `lib/label-copy.ts`) above each badge:
+
+**Excluded persona cards** (`excluded-persona-card.tsx`):
+- **Significance** — `high` | `medium` | `low` (color-coded pill)
+- **Exclusion** — `by-design` → “By Design”, `by-assumption` → “By Assumption”, `by-circumstance` → “By Circumstance”
+
+**Stakeholder challenge cards** (`blind-spot-card.tsx`, exported as `StakeholderChallengeCard`):
+- **Severity** — `high` | `medium` | `low` (color-coded pill)
+- **Lens** — stakeholder enum mapped to UI label (e.g. Business & Finance)
+
+### Section legends
+
+`results-panel.tsx` renders a `SectionLegend` above each results block, titled **“How to read these cards”** (`PERSONA_LEGEND_TITLE` in `lib/label-copy.ts`).
+
+**Excluded personas section** — explains Significance and Exclusion (`PERSONA_LEGEND_LINES`).
+
+**Stakeholder Challenge section** — explains Severity and Lens (`CHALLENGE_LEGEND_LINES`).
+
+### Copy report to clipboard
+
+When streaming finishes and `isProductAnalysisComplete()` passes (`lib/analysis-guards.ts`), `results-panel.tsx` shows `CopyReportButton` top-right above the summary.
+
+- **Source:** In-memory `ProductAnalysis` only — no database read
+- **Format:** Markdown via `formatAnalysisForClipboard()` in `lib/format-analysis.ts` (headings, bullet lists, lens labels, significance/severity capitalised)
+- **UX:** Button toggles to “Copied” for 2s; falls back to `window.prompt` if clipboard API is blocked
+
+---
+
+## Persistence & Sharing
+
+**Disabled for hackathon demo.** Analyses are not saved to Supabase, and there are no share links or persisted report URLs.
+
+- Supabase schema, client, and types exist under `lib/supabase/` as **optional scaffold for future work only**
+- Env vars `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are not used at runtime in the current build
+- **Privacy:** Product ideas and analysis results exist only in the user's browser session for the duration of the visit; closing or refreshing the page clears them. No server-side storage of user content.
+
+Copy-to-clipboard is the supported way to export a report off-site.
+
+---
+
 ## Tech Stack
 
 | Layer | Choice | Rationale |
@@ -66,7 +157,7 @@ In regulated domains (health, fintech, HR, contracts, etc.), the model intensifi
 | Language | TypeScript | Type safety across the full stack |
 | Styling | Tailwind CSS v4 + shadcn/ui | Rapid UI development with accessible, composable components |
 | AI | Anthropic Claude API (claude-sonnet-4-6) | Structured JSON output, streaming |
-| Database | Supabase | Postgres + auth + realtime, generous free tier |
+| Database | Supabase | Postgres + auth + realtime — scaffold only; not wired for demo |
 | Deployment | Vercel | Zero-config Next.js deployment, edge functions |
 | IDE | Cursor | AI-assisted development |
 
@@ -85,38 +176,66 @@ blind-spot-engine/
 │   └── page.tsx                # Main page — renders BlindSpotForm
 ├── components/
 │   ├── ui/                     # shadcn/ui primitives (auto-generated)
-│   ├── blind-spot-form.tsx     # Main input form + state management
-│   ├── blind-spot-card.tsx     # Individual blind spot result card
-│   └── results-panel.tsx       # Results container with loading states
+│   ├── blind-spot-form.tsx     # Input form, audience mode, context, streaming
+│   ├── excluded-persona-card.tsx
+│   ├── blind-spot-card.tsx     # StakeholderChallengeCard
+│   ├── results-panel.tsx       # Summary, legends, progressive results, copy button
+│   ├── section-legend.tsx      # “How to read these cards” block
+│   └── copy-report-button.tsx  # Clipboard export when analysis complete
+├── lib/
+│   ├── format-analysis.ts      # Markdown report for clipboard
+│   ├── label-copy.ts           # Legend and badge dimension copy
+│   ├── analysis-guards.ts      # Streaming completeness type guards
+│   └── supabase/               # Scaffold only — not used at runtime
 ├── types/
 │   └── blind-spot.ts           # Shared TypeScript interfaces
 ├── .env.local                  # ANTHROPIC_API_KEY (not committed)
 └── REQUIREMENTS.md             # This file
 ```
 
+Build status and remaining work live in `BUILD_TIMELINE.md`, not here.
+
 ---
 
 ## Components
 
 ### `blind-spot-form.tsx`
-The primary interactive component. Manages product idea input, optional context, loading state, and parsed `ProductAnalysis` results. Handles streaming fetch from the API route, assembling JSON chunk-by-chunk via `partial-json`, and rendering results progressively.
+The primary interactive component. Manages audience mode, product idea input, optional structured context, loading state, errors, and parsed `ProductAnalysis` results. Handles streaming fetch from the API route, assembling JSON chunk-by-chunk via `partial-json`, and passing partial results to `ResultsPanel`.
 
 **Props:** none (self-contained)
-**State:** `productIdea`, `context`, `showContext`, `isLoading`, `result`, `error`
-**Key behaviour:** ⌘ Enter triggers analysis. Optional collapsible context (team size, stage, industry, constraints) is sent to the API so Claude can tailor startup vs enterprise emphasis and regulated-domain risk surfacing.
+
+**State:** `productIdea`, `audienceMode`, `contextFields`, `showContext`, `isLoading`, `result`, `error`
+
+**Key behaviour:**
+- Radio selector for `startup` vs `enterprise` before the idea field
+- ⌘ Enter (Ctrl Enter on Windows) triggers analysis
+- Collapsible structured context fields concatenated via `buildContextString()` on submit
+- POST body: `product_idea`, `audience_mode`, `context` (when non-empty)
 
 ### `excluded-persona-card.tsx`
-Renders one excluded persona from Phase 1: name, exclusion type, significance, why excluded, and design implication.
+Renders one excluded persona: name, description, significance and exclusion badges with micro-labels, “Why excluded” and “Design implication” callouts.
 
-### `blind-spot-card.tsx`
-Renders one stakeholder challenge from Phase 2: title, severity, lens badge (e.g. Business & Finance), concern, challenge question, optional research insight.
+**Props:** `persona: ExcludedPersona`
+
+### `blind-spot-card.tsx` (`StakeholderChallengeCard`)
+Renders one stakeholder challenge: title, severity and lens badges with micro-labels, concern, challenge question (quoted), optional research insight.
 
 **Props:** `challenge: StakeholderChallenge`
 
 ### `results-panel.tsx`
-Two-phase layout: Excluded Personas then Stakeholder Gauntlet. Progressive reveal via type guards; skeleton only until first complete card arrives.
+Two-phase layout: analysis summary, then Excluded Personas, then Stakeholder Challenge. Progressive reveal via `isPersonaComplete` / `isChallengeComplete`; skeleton only until first content arrives. Error banner on failed runs. `CopyReportButton` when `isProductAnalysisComplete(result)`.
 
-**Props:** `result: Partial<ProductAnalysis> | null`, `isLoading: boolean`
+**Props:** `result: Partial<ProductAnalysis> | null`, `isLoading: boolean`, `error: string | null`
+
+### `section-legend.tsx`
+Compact definition list for “How to read these cards” above persona and challenge sections.
+
+**Props:** `title: string`, `lines: { term, definition }[]`
+
+### `copy-report-button.tsx`
+“Copy report” outline button; formats in-memory `ProductAnalysis` to markdown and writes to clipboard.
+
+**Props:** `analysis: ProductAnalysis`
 
 ---
 
@@ -129,7 +248,7 @@ Two-phase layout: Excluded Personas then Stakeholder Gauntlet. Progressive revea
 {
   "product_idea": "string — the product idea to analyse (required)",
   "audience_mode": "startup | enterprise (optional, default startup) — explicit PM audience for prompt framing",
-  "context": "string (optional) — stage, team, industry, constraints"
+  "context": "string (optional) — labeled sections from structured form fields, joined with newlines; omitted if all fields empty"
 }
 ```
 
@@ -155,12 +274,39 @@ interface ProductAnalysis {
 }
 ```
 
-### `StakeholderLens`
+### `ExcludedPersona`
 ```typescript
-type StakeholderLens = 'business' | 'product' | 'technical' | 'delivery'
+type ExclusionType = 'by-design' | 'by-assumption' | 'by-circumstance'
+type Significance = 'high' | 'medium' | 'low'
+
+interface ExcludedPersona {
+  id: string
+  name: string
+  description: string
+  why_excluded: string
+  design_implication: string
+  exclusion_type: ExclusionType
+  significance: Significance
+}
 ```
 
-UI labels (e.g. "Business & Finance") map to these enum values; do not add a fifth lens without a schema migration.
+### `StakeholderChallenge`
+```typescript
+type StakeholderLens = 'business' | 'product' | 'technical' | 'delivery'
+type Severity = 'high' | 'medium' | 'low'
+
+interface StakeholderChallenge {
+  id: string
+  stakeholder: StakeholderLens
+  title: string
+  concern: string
+  challenge_question: string
+  severity: Severity
+  research_insight?: string
+}
+```
+
+UI labels (e.g. “Business & Finance”) map to `StakeholderLens` enum values in `blind-spot-card.tsx` and `format-analysis.ts`; do not add a fifth lens without a schema migration.
 
 ---
 
@@ -178,46 +324,13 @@ The system prompt in `app/api/analyze/route.ts` instructs Claude to return **onl
 
 ---
 
-## Remaining Build
-
-### Mode 1 — 30–31 May | Blind Spot Personas ✅ mostly done
-- [x] Rebuilt two-phase concept: Excluded Personas + Stakeholder Gauntlet
-- [x] 7 files rewritten — types, API route, form, cards, results panel
-- [x] First live API analysis returning successfully
-- [ ] Error handling UI — graceful failure on API errors / empty responses
-- [x] Update REQUIREMENTS.md — lenses, API shape, prompt design
-
-> **Note:** Supabase persistence deliberately deferred. No data collection on public demo URL — no privacy policy required.
-
-### Mode 2 — 1–7 Jun | Stakeholder Challenge + Challenge Report
-- [ ] Stakeholder Challenge — structured challenge of the product idea across Business, Product, Technical, Delivery perspectives
-- [ ] Challenge Report — formatted, shareable output the user can send to stakeholders
-- [ ] Streaming UX polish — progressive card reveal as JSON streams in
-- [ ] Prompt refinement based on real Mode 1 usage
-
-### Polish & Deploy — 8–13 Jun
-- [ ] Novus.ai testing + feedback incorporation
-- [ ] Dark/light mode toggle
-- [ ] Mobile responsive layout review
-- [ ] Copy-to-clipboard on results
-- [ ] Share link for individual analyses
-- [ ] Vercel production deployment
-- [ ] Environment variable audit before going live
-
-### Submission — 14–20 Jun
-- [ ] Demo video recording
-- [ ] README and submission write-up
-- [ ] Public GitHub repo (after secrets audit)
-
----
-
 ## Environment Variables
 
 | Variable | Description |
 |---|---|
-| `ANTHROPIC_API_KEY` | Anthropic API key — never commit to source control |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (to be added) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (to be added) |
+| `ANTHROPIC_API_KEY` | Anthropic API key — required at runtime; never commit to source control |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL — optional; scaffold only, not used at runtime |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key — optional; scaffold only, not used at runtime |
 
 ---
 
@@ -226,3 +339,4 @@ The system prompt in `app/api/analyze/route.ts` instructs Claude to return **onl
 - The app requires a valid `ANTHROPIC_API_KEY` at runtime — there is no mock/offline mode
 - Claude responses are non-deterministic; the same product idea may produce different results on each run
 - The `research_insight` field is currently generated by Claude from training knowledge, not live web search — this will be addressed in the AI Enrichment phase with tool use integration
+- Analyses are not persisted; users must copy the report before leaving the page if they want to keep it

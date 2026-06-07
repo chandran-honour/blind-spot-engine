@@ -1,32 +1,39 @@
-import type { BlindSpot, AnalysisLens } from '@/types/blind-spot'
+import type {
+  AudienceMode,
+  ExcludedPersona,
+  StakeholderChallenge,
+} from '@/types/blind-spot'
 
-// -------------------------------------------------------
-// Database row types — mirror the Supabase schema exactly
-// -------------------------------------------------------
+// Mirrors supabase/schema.sql — ProductAnalysis persistence row
 
 export interface AnalysisRow {
   id: string
   created_at: string
   session_id: string
-  claim: string
-  lens: AnalysisLens
+  product_idea: string
   context: string | null
+  audience_mode: AudienceMode
   summary: string
-  blind_spots: BlindSpot[]
+  excluded_personas: ExcludedPersona[]
+  stakeholder_challenges: StakeholderChallenge[]
 }
 
-// -------------------------------------------------------
-// Supabase Database type — used to type the client
-// -------------------------------------------------------
+export type AnalysisInsert = Omit<AnalysisRow, 'id' | 'created_at'>
+export type AnalysisUpdate = Partial<AnalysisInsert>
 
 export interface Database {
   public: {
     Tables: {
       analyses: {
         Row: AnalysisRow
-        Insert: Omit<AnalysisRow, 'id' | 'created_at'>
-        Update: Partial<Omit<AnalysisRow, 'id' | 'created_at'>>
+        Insert: AnalysisInsert
+        Update: AnalysisUpdate
+        Relationships: []
       }
     }
+    Views: Record<string, never>
+    Functions: Record<string, never>
+    Enums: Record<string, never>
+    CompositeTypes: Record<string, never>
   }
 }
