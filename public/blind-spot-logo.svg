@@ -1,8 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+  <!-- Static fallback (dark). In-app logo uses components/blind-spot-logo.tsx for theme switching. -->
   <circle cx="24" cy="24" r="20" stroke="#3b82f6" stroke-width="2.5" fill="#172554"/>
-  <path
-    d="M24 24 L24 4 A20 20 0 0 0 44 24 Z"
-    fill="#0f172a"
-  />
   <circle cx="24" cy="24" r="5" fill="#60a5fa"/>
 </svg>

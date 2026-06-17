@@ -67,7 +67,19 @@ export type StakeholderLens =
   | 'technical'
   | 'delivery'
 
+export const STAKEHOLDER_LENSES: StakeholderLens[] = [
+  'business',
+  'product',
+  'technical',
+  'delivery',
+]
+
+/** Required stakeholder challenges per lens in a complete analysis. */
+export const CHALLENGES_PER_LENS = 2
+
 export type Severity = 'high' | 'medium' | 'low'
+
+export type RiskCategory = 'idea-specific' | 'table-stakes'
 
 export interface StakeholderChallenge {
   id: string
@@ -75,7 +87,9 @@ export interface StakeholderChallenge {
   title: string                  // short challenge title, max 8 words
   concern: string                // 2-3 sentences explaining the concern
   challenge_question: string     // sharp question that forces re-examination
+  suggested_mitigation: string   // concrete next experiment or de-risking action
   severity: Severity
+  risk_category: RiskCategory    // idea-specific vs generic table-stakes
   research_insight?: string      // optional grounding fact or example
 }
 
@@ -87,5 +101,5 @@ export interface ProductAnalysis {
   product_idea: string
   summary: string                       // 2-3 sentence overview of key findings
   excluded_personas: ExcludedPersona[]  // 3-5 personas
-  stakeholder_challenges: StakeholderChallenge[]  // 1-2 challenges per stakeholder lens
+  stakeholder_challenges: StakeholderChallenge[]  // exactly 2 challenges per stakeholder lens
 }

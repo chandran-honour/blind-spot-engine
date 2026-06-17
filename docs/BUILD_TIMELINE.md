@@ -1,6 +1,8 @@
 # Blind Spot Engine — Build Timeline
 
-**Deadline:** 20 June 2026 | **Total budget:** ~62 hours | **Build days:** 27
+**Deadline:** 20 June 2026 | **Total budget:** ~75 hours | **Build days:** 27
+
+Product behaviour and acceptance criteria: [`REQUIREMENTS.md`](REQUIREMENTS.md)
 
 ---
 
@@ -23,15 +25,15 @@
 ## ✅ KIDS WEEK EVENINGS — Tue 26 – Fri 29 May (1.5h/eve × 4 = 6h)
 - [x] Core UI components built (form, persona cards, challenge cards, results panel)
 - [x] Claude API route with streaming
-- [x] Two-phase concept rebuilt (excluded personas + stakeholder gauntlet)
-- [x] Optional context field added
+- [x] Two-phase concept rebuilt (excluded personas + Stakeholder Challenge)
+- [x] Optional single context field added (replaced by structured context in Mode 2)
 - [x] Supabase schema and client code drafted
 - [x] REQUIREMENTS.md created and updated
 - [x] App running end-to-end locally
 
 ---
 
-## 🔄 MODE 1 — Sat 30 – Sun 31 May (4–5h/day × 2 = ~9h)
+## ✅ MODE 1 — Sat 30 – Sun 31 May (4–5h/day × 2 = ~9h)
 
 ### ✅ Sat 30 May
 - [x] Supabase project created (dashboard setup)
@@ -45,18 +47,22 @@
 
 ---
 
-## MODE 2 — Mon 1 – Sun 7 Jun (3–4h/day × 7 = ~24h)
+## ✅ MODE 2 — AI Enrichment — Mon 1 – Sun 7 Jun (3–4h/day × 7 = ~24h)
+- [x] Audience mode selector (startup / enterprise PM)
+- [x] Structured context form (target market, stage, team constraints, validated)
+- [x] Label legends and badge micro-labels on persona and challenge cards
 - [x] Streaming UX polish — progressive card reveal as JSON streams in
-- [ ] Prompt refinement based on real test results
-- [ ] ~~Share link for individual analyses~~ — deferred (no DB persistence on hackathon demo)
 - [x] Copy-to-clipboard on results
+- [x] Docs sync — REQUIREMENTS.md, CLAUDE.md, [`TESTPLAN.md`](TESTPLAN.md)
+- [x] Prompt refinement based on real test results (see [`PROMPTREFINMENTS.md`](PROMPTREFINMENTS.md))
+- [ ] ~~Share link for individual analyses~~ — deferred (no DB persistence on hackathon demo)
 
 ---
 
-## POLISH & DEPLOY — Mon 8 – Fri 13 Jun (3h/day × 6 = ~18h)
-- [ ] Mobile responsive layout review and fixes
-- [ ] Dark/light mode toggle
-- [ ] Loading and empty states polished
+## 🔄 POLISH & DEPLOY — Mon 8 – Fri 13 Jun (3h/day × 6 = ~18h)
+- [x] Mobile responsive layout review and fixes (see [`MOBILE_RESPONSIVE_REVIEW.md`](MOBILE_RESPONSIVE_REVIEW.md))
+- [x] Dark/light mode toggle (brand-aligned light palette, tokenized badges/callouts, themed logo)
+- [x] Loading and empty states polished
 - [ ] Vercel production deployment
 - [ ] Custom domain (optional)
 - [ ] Environment variable audit — confirm no secrets in git history
@@ -82,8 +88,8 @@
 | Day 1 Scaffold | 25 May | 3h | ✅ Done |
 | Kids Week Evenings | 26–29 May | 6h | ✅ Done |
 | Mode 1 — Core | 30–31 May | 9h | ✅ Done |
-| Mode 2 — AI Enrichment | 1–7 Jun | 24h | 🔄 In progress |
-| Polish & Deploy | 8–13 Jun | 18h | ⬜ Upcoming |
+| Mode 2 — AI Enrichment | 1–7 Jun | 24h | ✅ Done |
+| Polish & Deploy | 8–13 Jun | 18h | 🔄 In progress |
 | Submit | 14–20 Jun | 14h | ⬜ Upcoming |
 | **Total** | | **~75h** | |
 
