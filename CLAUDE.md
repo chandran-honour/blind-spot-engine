@@ -60,8 +60,14 @@ blind-spot-engine/
 │   └── blind-spot.ts                 # Shared TypeScript interfaces
 ├── supabase/
 │   └── schema.sql                    # Run in Supabase SQL Editor to create tables
-├── REQUIREMENTS.md                   # Full product requirements
-├── BUILD_TIMELINE.md                 # Build plan with dates and task checklist
+├── docs/
+│   ├── REQUIREMENTS.md               # Full product requirements
+│   ├── BUILD_TIMELINE.md             # Build plan with dates and task checklist
+│   ├── PROMPTREFINMENTS.md           # Prompt refinement log and verify checklist
+│   ├── TESTPLAN.md                   # Product ideas and scoring rubric for test runs
+│   ├── MOBILE_RESPONSIVE_REVIEW.md   # Mobile responsive test checklist
+│   ├── LOADING_EMPTY_STATES_PLAN.md  # Loading/empty states polish (complete)
+│   └── THEME_TOGGLE_PLAN.md          # Dark/light mode implementation (complete)
 └── CLAUDE.md                         # This file
 ```
 
@@ -104,8 +110,8 @@ The app will not function without `ANTHROPIC_API_KEY`. `NEXT_PUBLIC_SUPABASE_*` 
 - `audience_mode` defaults to `startup`; invalid values return 400. Prepends an audience instruction block to the user message
 - `context` is a single string built from optional structured form fields via `buildContextString()` in `types/blind-spot.ts`; omitted when all fields empty
 - Streams a single JSON object from Claude using `client.messages.stream()`
-- Model: `claude-sonnet-4-6`, max tokens: 3000
-- `export const maxDuration = 60` prevents Vercel timeout
+- Model: `claude-sonnet-4-6`, max tokens: 8000 (raised from 4000 — the refined output format adds a mitigation + research insight per challenge, and 4000 truncated long runs before the final Delivery & Operations lens)
+- `export const maxDuration = 120` prevents Vercel timeout (raised from 60 to give the longer 8000-token generations headroom)
 - Returns `text/plain` streaming response — no SSE, raw token stream
 
 ### Audience mode & structured context (`components/blind-spot-form.tsx`)
@@ -141,7 +147,7 @@ The app will not function without `ANTHROPIC_API_KEY`. `NEXT_PUBLIC_SUPABASE_*` 
   product_idea: string
   summary: string
   excluded_personas: ExcludedPersona[]   // 3-5 items
-  stakeholder_challenges: StakeholderChallenge[]  // 1-2 per lens
+  stakeholder_challenges: StakeholderChallenge[]  // exactly 2 per lens
 }
 ```
 
@@ -201,18 +207,18 @@ To activate persistence later:
 
 ---
 
-## Remaining build (as of 1 Jun 2026)
+## Remaining build (as of Jun 2026)
 
-### Mode 2 (1–7 Jun)
+### Mode 2 (1–7 Jun) — done
 
 - Streaming progressive reveal (partial-json)
-- Prompt refinement — run test analyses, tighten system prompt
+- ~~Prompt refinement~~ — done ([`docs/PROMPTREFINMENTS.md`](docs/PROMPTREFINMENTS.md))
 - ~~Copy-to-clipboard on results~~ — done (`CopyReportButton`, `lib/format-analysis.ts`)
 - ~~Share link~~ — deferred (no DB persistence on hackathon demo)
 
 ### Polish & Deploy (8–13 Jun)
 
-- Mobile responsive review
+- ~~Mobile responsive review~~ — done ([`docs/MOBILE_RESPONSIVE_REVIEW.md`](docs/MOBILE_RESPONSIVE_REVIEW.md))
 - UI polish pass for video recording
 - Vercel production deployment
 - Secrets audit (`git grep -i "sk-ant"` before making repo public)

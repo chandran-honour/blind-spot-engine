@@ -1,4 +1,4 @@
-# Demo Plan — Product Ideas to Test
+# Test Plan — Product Ideas to Test
 
 ## Core test set (start here)
 
@@ -10,21 +10,22 @@
 - Team constraints: Limited integrations capacity and no dedicated enterprise security support yet.
 - What has already been validated: Teams respond positively to auto-structuring messy planning inputs into actionable tasks.
 
-2. IT Finance Forecaster
+
+2. Caregiver Coordination App for Aging Parents
+
+- Helps families share medication schedules, appointments, and home-care tasks for elderly relatives across multiple caregivers.
+- Target market: Adult children and extended family members coordinating care for aging parents who live independently or with part-time home help.
+- Stage of development: Shared calendar and task list MVP with med reminders; no professional caregiver marketplace or clinical integrations yet.
+- Team constraints: English-only; no HIPAA-covered provider workflows in v1; relies on family-entered data rather than pharmacy or EHR feeds.
+- What has already been validated: Secondary caregivers want visibility when the primary caregiver is unavailable; families engage when updates require less than one minute to post.
+
+3. IT Finance Forecaster
 
 - Helps forecast IT spend based on business strategy and product KPIs.
 - Target market: IT finance leaders and CIO office teams at mid-market companies planning annual or quarterly IT budgets.
 - Stage of development: Concept with spreadsheet-based forecasting model; no live integrations to ERP or product analytics yet.
 - Team constraints: No finance-certified advisory layer; limited historical spend data beyond manual uploads.
 - What has already been validated: Finance stakeholders want earlier visibility into how product roadmap changes affect run-rate IT spend.
-
-3. Vendor Security Questionnaire Copilot
-
-- Helps teams complete security questionnaires and identify missing evidence.
-- Target market: Security/compliance leads at B2B SaaS startups responding to 50–200-question vendor assessments.
-- Stage of development: MVP focused on questionnaire upload and draft answer generation; evidence mapping is manual.
-- Team constraints: Cannot yet support custom SOC 2/ISO control libraries per customer; small team, no 24/7 review workflow.
-- What has already been validated: Teams spend 4–8 hours per questionnaire and want faster first drafts with clear "needs evidence" flags.
 
 4. Contract Risk Scanner for SMEs
 
@@ -34,7 +35,15 @@
 - Team constraints: English-only; trained on common contract templates, not bespoke M&A or regulated-industry agreements.
 - What has already been validated: Users want highlighted "unusual vs market standard" clauses before sending to a lawyer.
 
-. Home Energy Upgrade Planner
+5. Vendor Security Questionnaire Copilot
+
+- Helps teams complete security questionnaires and identify missing evidence.
+- Target market: Security/compliance leads at B2B SaaS startups responding to 50–200-question vendor assessments.
+- Stage of development: MVP focused on questionnaire upload and draft answer generation; evidence mapping is manual.
+- Team constraints: Cannot yet support custom SOC 2/ISO control libraries per customer; small team, no 24/7 review workflow.
+- What has already been validated: Teams spend 4–8 hours per questionnaire and want faster first drafts with clear "needs evidence" flags.
+
+6. Home Energy Upgrade Planner
 
 - Recommends insulation/HVAC upgrades with ROI estimates and payback windows.
 - Target market: Homeowners in regions with rising energy costs considering insulation, HVAC, or solar upgrades.
@@ -44,7 +53,7 @@
 
 ## Additional ideas (broader coverage)
 
-6. Instant Credit for Gig Workers
+7. Instant Credit for Gig Workers
 
 - Offers short-term advances based on payout and transaction history.
 - Target market: Platform gig workers (rideshare, delivery, freelance) with irregular income needing short-term cash between payouts.
@@ -52,15 +61,7 @@
 - Team constraints: Regulatory and KYC complexity limit rollout to one pilot market; no banking charter.
 - What has already been validated: Workers open the app when payout delays occur; advance limits tied to verified platform earnings reduce default concern in interviews.
 
-8. Caregiver Coordination App for Aging Parents
-
-- Helps families share medication schedules, appointments, and home-care tasks for elderly relatives across multiple caregivers.
-- Target market: Adult children and extended family members coordinating care for aging parents who live independently or with part-time home help.
-- Stage of development: Shared calendar and task list MVP with med reminders; no professional caregiver marketplace or clinical integrations yet.
-- Team constraints: English-only; no HIPAA-covered provider workflows in v1; relies on family-entered data rather than pharmacy or EHR feeds.
-- What has already been validated: Secondary caregivers want visibility when the primary caregiver is unavailable; families engage when updates require less than one minute to post.
-
-9. E-commerce Returns Automation
+8. E-commerce Returns Automation
 
 - Auto-approves returns and schedules pickups from order/photo evidence.
 - Target market: D2C and mid-size e-commerce brands processing 500–5,000 returns per month.

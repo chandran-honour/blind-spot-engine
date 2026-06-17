@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { parse } from 'partial-json'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ResultsPanel } from '@/components/results-panel'
+import { AudienceModeSelector } from '@/components/audience-mode-selector'
 import { cn } from '@/lib/utils'
 import {
   buildContextString,
@@ -13,6 +13,7 @@ import {
   type ContextFields,
   type ProductAnalysis,
 } from '@/types/blind-spot'
+import { getLoadingMessage, getLoadingPhase } from '@/lib/loading-phase'
 
 const EMPTY_CONTEXT_FIELDS: ContextFields = {
   targetMarket: '',
@@ -22,163 +23,307 @@ const EMPTY_CONTEXT_FIELDS: ContextFields = {
 }
 
 const contextFieldClassName =
-  'bg-slate-900 border-slate-700 text-slate-50 placeholder:text-slate-500 focus-visible:ring-blue-500/30 focus-visible:border-blue-500 text-sm'
+  'bg-input/80 border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring/50 focus-visible:border-ring text-sm'
 
 export function BlindSpotForm() {
-  const [productIdea, setProductIdea] = useState('')
+  const productIdeaRef = useRef<HTMLTextAreaElement>(null)
+  const runInFlightRef = useRef(false)
+  const lastRunAtRef = useRef(0)
+
+  const audienceModeRef = useRef<AudienceMode>('startup')
+  const contextFieldsRef = useRef<ContextFields>(EMPTY_CONTEXT_FIELDS)
+  const isLoadingRef = useRef(false)
+
   const [audienceMode, setAudienceMode] = useState<AudienceMode>('startup')
   const [contextFields, setContextFields] = useState<ContextFields>(EMPTY_CONTEXT_FIELDS)
-  const [showContext, setShowContext] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<Partial<ProductAnalysis> | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
+
+  audienceModeRef.current = audienceMode
+  contextFieldsRef.current = contextFields
+  isLoadingRef.current = isLoading
+
+  const loadingMessage = isLoading ? getLoadingMessage(getLoadingPhase(result)) : ''
+
+  const focusProductIdea = () => {
+    productIdeaRef.current?.focus()
+  }
+
+  const scrollProductIdeaIntoView = () => {
+    productIdeaRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }
+
+  const scrollResultsIntoView = () => {
+    if (typeof window === 'undefined') return
+    window.setTimeout(() => {
+      document.getElementById('analysis-results')?.scrollIntoView({
+        block: 'center',
+        behavior: 'smooth',
+      })
+    }, 300)
+  }
+
+  const handleRetry = () => {
+    setError(null)
+    setResult(null)
+    focusProductIdea()
+  }
 
   const updateContextField = (key: keyof ContextFields, value: string) => {
     setContextFields((prev) => ({ ...prev, [key]: value }))
   }
 
-  const handleAnalyse = async () => {
-    if (!productIdea.trim() || isLoading) return
+  const readProductIdea = (): string => {
+    const fromRef = productIdeaRef.current?.value ?? ''
+    if (fromRef.trim()) return fromRef.trim()
 
-    setIsLoading(true)
-    setResult(null)
-    setError(null)
+    const byId = document.getElementById('product-idea')
+    if (byId instanceof HTMLTextAreaElement && byId.value.trim()) {
+      return byId.value.trim()
+    }
 
-    const context = buildContextString(contextFields)
+    return ''
+  }
+
+  const applyAnalysisText = (fullText: string) => {
+    let trimmed = fullText.trim()
+    if (!trimmed) {
+      throw new Error('The analysis returned no results. Please try again.')
+    }
+
+    // The model is occasionally wrapping its JSON response in a markdown code
+    // fence (```json ... ```) despite being told not to. Strip a leading
+    // ```[json] and trailing ``` before attempting to parse, so a fenced
+    // response doesn't hard-fail JSON.parse / the partial-json fallback.
+    if (trimmed.startsWith('```')) {
+      trimmed = trimmed
+        .replace(/^```[a-zA-Z]*\s*/, '')
+        .replace(/```\s*$/, '')
+        .trim()
+    }
+
+    let parsed: Partial<ProductAnalysis> | null = null
+    try {
+      parsed = JSON.parse(trimmed) as Partial<ProductAnalysis>
+    } catch {
+      parsed = parse(trimmed) as Partial<ProductAnalysis>
+    }
+
+    if (!parsed || typeof parsed !== 'object') {
+      throw new Error('Could not read the analysis response. Please try again.')
+    }
+
+    setResult(parsed)
+  }
+
+  const executeAnalysis = async (productIdeaValue: string) => {
+    const context = buildContextString(contextFieldsRef.current)
+    const useStreaming =
+      typeof window !== 'undefined' && !window.matchMedia('(pointer: coarse)').matches
 
     try {
+      const controller = new AbortController()
+      const timeoutId = window.setTimeout(() => controller.abort(), 90_000)
+
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          product_idea: productIdea.trim(),
-          audience_mode: audienceMode,
+          product_idea: productIdeaValue,
+          audience_mode: audienceModeRef.current,
           context,
         }),
+        signal: controller.signal,
       })
 
-      if (!response.ok) throw new Error(`The analysis failed (${response.status}). Please try again.`)
-      if (!response.body) throw new Error('No response was received. Please try again.')
+      window.clearTimeout(timeoutId)
 
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let fullText = ''
+      if (!response.ok) {
+        let detail = ''
+        try {
+          const errBody = (await response.json()) as { error?: string }
+          if (errBody?.error) detail = `: ${errBody.error}`
+        } catch {
+          // Non-JSON error body
+        }
+        throw new Error(`The analysis failed (${response.status})${detail}. Please try again.`)
+      }
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        fullText += decoder.decode(value, { stream: true })
+      if (useStreaming && response.body) {
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let fullText = ''
 
         try {
-          const parsed = parse(fullText) as Partial<ProductAnalysis>
-          if (parsed && typeof parsed === 'object') {
-            setResult(parsed)
-          }
-        } catch {
-          // Unparseable chunk — continue streaming
-        }
-      }
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) {
+              fullText += decoder.decode()
+              break
+            }
+            fullText += decoder.decode(value, { stream: true })
 
-      if (fullText.trim() === '') {
-        throw new Error('The analysis returned no results. Please try again.')
+            try {
+              const parsed = parse(fullText) as Partial<ProductAnalysis>
+              if (parsed && typeof parsed === 'object') {
+                setResult(parsed)
+              }
+            } catch {
+              // Unparseable chunk — continue streaming
+            }
+          }
+
+          applyAnalysisText(fullText)
+        } catch (streamErr) {
+          if (fullText.trim()) {
+            try {
+              applyAnalysisText(fullText)
+              return
+            } catch {
+              // Fall through to stream error
+            }
+          }
+          throw streamErr
+        }
+      } else {
+        const fullText = await response.text()
+        applyAnalysisText(fullText)
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.'
+      let message = 'Something went wrong. Please try again.'
+      if (err instanceof Error) {
+        if (err.name === 'AbortError') {
+          message = 'The analysis timed out. Please try again.'
+        } else {
+          message = err.message
+        }
+      }
       setError(message)
+      scrollResultsIntoView()
       console.error('Analysis error:', err)
     } finally {
+      isLoadingRef.current = false
       setIsLoading(false)
+      runInFlightRef.current = false
     }
   }
 
+  const startRunRef = useRef<() => void>(() => {})
+
+  startRunRef.current = () => {
+    const now = Date.now()
+    if (runInFlightRef.current || isLoadingRef.current || now - lastRunAtRef.current < 300) {
+      return
+    }
+    lastRunAtRef.current = now
+
+    const productIdeaValue = readProductIdea()
+    if (!productIdeaValue) {
+      const message = 'Please enter a product idea before running the analysis.'
+      setValidationError(message)
+      setError(message)
+      scrollProductIdeaIntoView()
+      scrollResultsIntoView()
+      return
+    }
+
+    runInFlightRef.current = true
+    isLoadingRef.current = true
+    setIsLoading(true)
+    setResult(null)
+    setError(null)
+    setValidationError(null)
+    scrollResultsIntoView()
+
+    void executeAnalysis(productIdeaValue)
+  }
+
+  useEffect(() => {
+    const button = document.getElementById('run-blind-spot')
+    if (!button) return
+
+    const activate = (event: Event) => {
+      event.preventDefault()
+      event.stopPropagation()
+      startRunRef.current()
+    }
+
+    button.addEventListener('click', activate)
+    button.addEventListener('touchend', activate)
+
+    return () => {
+      button.removeEventListener('click', activate)
+      button.removeEventListener('touchend', activate)
+    }
+  }, [])
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      handleAnalyse()
+      e.preventDefault()
+      startRunRef.current()
     }
   }
 
   return (
     <div className="space-y-6">
+      <AudienceModeSelector value={audienceMode} onChange={setAudienceMode} />
 
-      {/* Audience mode */}
-      <div className="space-y-2">
-        <span id="audience-mode-label" className="text-sm font-medium text-slate-300">
-          Who are you building for?
-        </span>
-        <div
-          role="radiogroup"
-          aria-labelledby="audience-mode-label"
-          className="grid grid-cols-2 gap-2 p-1 rounded-lg bg-slate-900 border border-slate-700"
-        >
-          {(
-            [
-              { value: 'startup' as const, label: 'Startup / Founder' },
-              { value: 'enterprise' as const, label: 'Enterprise PM' },
-            ] as const
-          ).map(({ value, label }) => {
-            const selected = audienceMode === value
-            return (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => setAudienceMode(value)}
-                className={cn(
-                  'rounded-md px-3 py-2.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950',
-                  selected
-                    ? 'bg-slate-800 text-slate-50 shadow-sm ring-1 ring-slate-600'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                )}
-              >
-                {label}
-              </button>
-            )
-          })}
+      <div className="space-y-6">
+        <div className="space-y-3">
+          <label htmlFor="product-idea" className="text-sm font-medium text-foreground">
+            Describe your product idea
+          </label>
+          <Textarea
+            ref={productIdeaRef}
+            id="product-idea"
+            name="product-idea"
+            placeholder="e.g. A mobile app that helps freelancers track their time and invoice clients automatically..."
+            defaultValue=""
+            onKeyDown={handleKeyDown}
+            onInput={() => {
+              setValidationError(null)
+            }}
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck
+            enterKeyHint="enter"
+            aria-invalid={!!validationError}
+            aria-describedby={validationError ? 'product-idea-error' : undefined}
+            className={cn(
+              'min-h-[120px] [field-sizing:content] bg-input/80 resize-y focus-visible:ring-ring/50 focus-visible:border-ring',
+              validationError && 'border-destructive/60 focus-visible:border-destructive focus-visible:ring-destructive/30'
+            )}
+          />
+          {validationError && (
+            <p id="product-idea-error" className="text-sm text-destructive" role="alert">
+              {validationError}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            <span className="hidden sm:inline">
+              Tip: press{' '}
+              <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-xs">⌘ Enter</kbd>{' '}
+              to run the analysis
+            </span>
+            <span className="sm:hidden">Enter your idea, then tap Run Blind Spot below.</span>
+          </p>
         </div>
-        <p className="text-xs text-slate-600">
-          Shapes how challenges are framed — PMF and runway vs governance and rollout.
-        </p>
-      </div>
 
-      {/* Product idea input */}
-      <div className="space-y-3">
-        <label htmlFor="product-idea" className="text-sm font-medium text-slate-300">
-          Describe your product idea
-        </label>
-        <Textarea
-          id="product-idea"
-          placeholder="e.g. A mobile app that helps freelancers track their time and invoice clients automatically..."
-          value={productIdea}
-          onChange={(e) => setProductIdea(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="min-h-[120px] bg-slate-900 border-slate-700 text-slate-50 placeholder:text-slate-500 resize-none focus-visible:ring-blue-500/30 focus-visible:border-blue-500"
-        />
-        <p className="text-xs text-slate-600">
-          Tip: press{' '}
-          <kbd className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-xs">⌘ Enter</kbd>{' '}
-          to run the analysis
-        </p>
-      </div>
+        <details className="group">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center gap-1.5 touch-manipulation text-sm text-muted-foreground hover:text-foreground transition-colors duration-150 [&::-webkit-details-marker]:hidden">
+            <span className="inline-block transition-transform duration-200 group-open:rotate-90">
+              ›
+            </span>
+            <span className="group-open:hidden">Add context</span>
+            <span className="hidden group-open:inline">Hide context</span>{' '}
+            <span className="text-muted-foreground/80 text-xs">(optional — improves accuracy)</span>
+          </summary>
 
-      {/* Optional structured context */}
-      <div>
-        <button
-          type="button"
-          onClick={() => setShowContext(!showContext)}
-          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-300 transition-colors duration-150"
-        >
-          <span className={`inline-block transition-transform duration-200 ${showContext ? 'rotate-90' : ''}`}>
-            ›
-          </span>
-          {showContext ? 'Hide context' : 'Add context'}{' '}
-          <span className="text-slate-600 text-xs">(optional — improves accuracy)</span>
-        </button>
-
-        {showContext && (
           <div className="mt-3 space-y-4">
             <div className="space-y-2">
-              <label htmlFor="context-target-market" className="text-sm font-medium text-slate-300">
+              <label htmlFor="context-target-market" className="text-sm font-medium text-foreground">
                 Target market
               </label>
               <Input
@@ -191,7 +336,7 @@ export function BlindSpotForm() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="context-stage" className="text-sm font-medium text-slate-300">
+              <label htmlFor="context-stage" className="text-sm font-medium text-foreground">
                 Stage of development
               </label>
               <Input
@@ -204,7 +349,7 @@ export function BlindSpotForm() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="context-team" className="text-sm font-medium text-slate-300">
+              <label htmlFor="context-team" className="text-sm font-medium text-foreground">
                 Team constraints
               </label>
               <Textarea
@@ -217,7 +362,7 @@ export function BlindSpotForm() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="context-validated" className="text-sm font-medium text-slate-300">
+              <label htmlFor="context-validated" className="text-sm font-medium text-foreground">
                 What&apos;s already been validated
               </label>
               <Textarea
@@ -229,33 +374,40 @@ export function BlindSpotForm() {
               />
             </div>
 
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-muted-foreground">
               The more context you provide, the more specific and actionable the analysis will be.
             </p>
           </div>
-        )}
-      </div>
+        </details>
 
-      {/* Submit */}
-      <Button
-        onClick={handleAnalyse}
-        disabled={!productIdea.trim() || isLoading}
-        className="w-full bg-blue-600 hover:bg-blue-500 text-white h-11 text-base font-medium disabled:opacity-40"
-      >
-        {isLoading ? (
-          <span className="flex items-center gap-2">
-            <span className="inline-block w-2 h-2 rounded-full bg-white/60 animate-pulse" />
-            Running Stakeholder Challenge...
-          </span>
-        ) : (
-          'Run Blind Spot'
-        )}
-      </Button>
+        {/* Never use disabled= — it blocks touch events on many Android browsers */}
+        <button
+          id="run-blind-spot"
+          type="button"
+          aria-busy={isLoading}
+          className={cn(
+            'relative z-10 w-full min-h-14 touch-manipulation rounded-lg px-4 py-3 text-base font-medium transition-colors',
+            'bg-brand-accent text-brand-accent-foreground hover:bg-brand-accent/90 active:bg-brand-accent/80',
+            isLoading && 'opacity-70',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+          )}
+        >
+          {isLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-white/60 animate-pulse" />
+              {loadingMessage || 'Starting analysis…'}
+            </span>
+          ) : (
+            'Run Blind Spot'
+          )}
+        </button>
+      </div>
 
       <ResultsPanel
         result={result}
         isLoading={isLoading}
         error={error}
+        onRetry={handleRetry}
       />
     </div>
   )
