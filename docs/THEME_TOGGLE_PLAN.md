@@ -1,7 +1,8 @@
 # Dark / Light Mode Toggle Plan
 
 **Status:** Implemented (Jun 2026) — including pixel-perfect light palette  
-**Scope:** Dark as default; brand-aligned light mode
+**Scope:** Dark as default; brand-aligned light mode  
+**Phase:** Polish & Deploy — complete (see [`BUILD_TIMELINE.md`](BUILD_TIMELINE.md))
 
 ---
 

@@ -1,7 +1,7 @@
 # Mobile Responsive Review Checklist
 
 **Status:** Complete — tested and verified (Jun 2026)  
-**Phase:** Polish & Deploy (see [`BUILD_TIMELINE.md`](BUILD_TIMELINE.md))  
+**Phase:** Polish & Deploy — complete (see [`BUILD_TIMELINE.md`](BUILD_TIMELINE.md))  
 **Related:** `[LOADING_EMPTY_STATES_PLAN.md](LOADING_EMPTY_STATES_PLAN.md)`, `[THEME_TOGGLE_PLAN.md](THEME_TOGGLE_PLAN.md)`
 
 ---

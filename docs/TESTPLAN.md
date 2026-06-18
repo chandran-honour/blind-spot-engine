@@ -49,7 +49,7 @@
 - Target market: Homeowners in regions with rising energy costs considering insulation, HVAC, or solar upgrades.
 - Stage of development: Recommendation engine prototype using generic regional tariffs and average home profiles.
 - Team constraints: No installer network partnerships yet; ROI models depend on user-supplied utility rates and home age.
-- What has already been validated: Users engage with payback-period comparisons when shown side-by-side upgrade options.
+- What has already been validated: No installer network partnerships yet; ROI models depend on user-supplied utility rates and home age.
 
 ## Additional ideas (broader coverage)
 

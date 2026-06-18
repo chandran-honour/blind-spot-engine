@@ -92,14 +92,14 @@ Optional collapsible fields on the form improve specificity. Labels in the UI:
 
 | Field key | Form label |
 |---|---|
-| `targetMarket` | Target market |
+| `targetMarket` | Target market / users |
 | `stageOfDevelopment` | Stage of development |
 | `teamConstraints` | Team constraints |
 | `validated` | What's already been validated |
 
 **Form state:** `contextFields` (`ContextFields` in `types/blind-spot.ts`), toggled via “Add context” / “Hide context”.
 
-**Submission:** `buildContextString()` in `types/blind-spot.ts` joins non-empty fields into labeled lines, e.g. `Target market: Independent dental clinics in the UK`, separated by newlines. If all fields are empty, `context` is omitted from the request body (empty string is not sent as meaningful context).
+**Submission:** `buildContextString()` in `types/blind-spot.ts` joins non-empty fields into labeled lines, e.g. `Target market / users: Independent dental clinics in the UK`, separated by newlines. If all fields are empty, `context` is omitted from the request body (empty string is not sent as meaningful context).
 
 **API:** Single `context` string on `POST /api/analyze`, appended to the user message as `Additional context: …` when non-empty.
 
@@ -170,27 +170,50 @@ blind-spot-engine/
 ├── app/
 │   ├── api/
 │   │   └── analyze/
-│   │       └── route.ts        # Claude streaming API route
-│   ├── globals.css             # Tailwind v4 + shadcn/ui theme
-│   ├── layout.tsx              # Root layout with font setup
-│   └── page.tsx                # Main page — renders BlindSpotForm
+│   │       └── route.ts              # Claude streaming API route
+│   ├── globals.css                   # Tailwind v4 theme, tokens, card-in animation
+│   ├── layout.tsx                    # Root layout (font, ThemeProvider)
+│   └── page.tsx                      # Main page — renders BlindSpotForm
 ├── components/
-│   ├── ui/                     # shadcn/ui primitives (auto-generated)
-│   ├── blind-spot-form.tsx     # Input form, audience mode, context, streaming
-│   ├── excluded-persona-card.tsx
-│   ├── blind-spot-card.tsx     # StakeholderChallengeCard
-│   ├── results-panel.tsx       # Summary, legends, progressive results, copy button
-│   ├── section-legend.tsx      # “How to read these cards” block
-│   └── copy-report-button.tsx  # Clipboard export when analysis complete
+│   ├── ui/                           # shadcn/ui primitives (auto-generated)
+│   ├── audience-mode-selector.tsx    # Startup / Enterprise PM selector
+│   ├── blind-spot-form.tsx           # Input form, context, streaming fetch
+│   ├── blind-spot-logo.tsx           # Themed SVG logo
+│   ├── excluded-persona-card.tsx     # Phase 1 — excluded persona
+│   ├── blind-spot-card.tsx           # Phase 2 — StakeholderChallengeCard
+│   ├── results-panel.tsx             # Summary, legends, progressive results, copy button
+│   ├── section-legend.tsx            # “How to read these cards” block
+│   ├── copy-report-button.tsx        # Clipboard / share export when analysis complete
+│   ├── idle-results-placeholder.tsx  # Pre-run empty state
+│   ├── loading-status-line.tsx       # Phase-aware loading copy
+│   ├── mode-toggle.tsx               # Dark / light theme toggle
+│   ├── theme-provider.tsx            # next-themes wrapper
+│   └── pendo-initializer.tsx         # Novus.ai / Pendo analytics (production)
 ├── lib/
-│   ├── format-analysis.ts      # Markdown report for clipboard
-│   ├── label-copy.ts           # Legend and badge dimension copy
-│   ├── analysis-guards.ts      # Streaming completeness type guards
-│   └── supabase/               # Scaffold only — not used at runtime
+│   ├── format-analysis.ts            # Markdown report for clipboard
+│   ├── label-copy.ts                 # Legend and badge dimension copy
+│   ├── analysis-guards.ts            # Streaming completeness type guards
+│   ├── loading-phase.ts              # Loading phase detection and copy
+│   ├── copy-to-clipboard.ts          # Clipboard and native share helpers
+│   ├── theme-colors.ts               # Badge and callout token class maps
+│   └── supabase/                     # Scaffold only — not used at runtime
 ├── types/
-│   └── blind-spot.ts           # Shared TypeScript interfaces
-├── .env.local                  # ANTHROPIC_API_KEY (not committed)
-└── REQUIREMENTS.md             # This file
+│   └── blind-spot.ts                 # Shared TypeScript interfaces
+├── public/
+│   └── blind-spot-logo.svg           # Static logo fallback
+├── supabase/
+│   └── schema.sql                    # Run in Supabase SQL Editor (scaffold)
+├── docs/
+│   ├── REQUIREMENTS.md               # This file — product requirements
+│   ├── BUILD_TIMELINE.md             # Build plan with dates and task checklist
+│   ├── TESTPLAN.md                   # Product ideas and scoring rubric for test runs
+│   ├── PROMPTREFINMENTS.md           # Prompt refinement log and verify checklist
+│   ├── MOBILE_RESPONSIVE_REVIEW.md   # Mobile responsive test checklist
+│   ├── LOADING_EMPTY_STATES_PLAN.md  # Loading / empty states polish (complete)
+│   └── THEME_TOGGLE_PLAN.md          # Dark / light mode implementation (complete)
+├── CLAUDE.md                         # AI / Cursor context for this repo
+├── README.md
+└── .env.local                        # ANTHROPIC_API_KEY (not committed)
 ```
 
 ## Build Status & Planned Work
@@ -201,10 +224,10 @@ Phase dates, hour budget, and checkboxes live in [`BUILD_TIMELINE.md`](BUILD_TIM
 |---|---|---|
 | Prep → Mode 1 | Done | Core UI, streaming API, error handling; Supabase scaffold only; persistence off for demo |
 | Mode 2 — AI Enrichment | Done | Audience mode, structured context, legends, copy report, progressive reveal, prompt refinements ([`PROMPTREFINMENTS.md`](PROMPTREFINMENTS.md)) |
-| Polish & Deploy | In progress | Dark/light mode, loading/empty states, mobile responsive review done ([`MOBILE_RESPONSIVE_REVIEW.md`](MOBILE_RESPONSIVE_REVIEW.md)); Vercel deploy and Novus.ai still open |
-| Submit | Upcoming | Demo video, README, Devpost submission |
+| Polish & Deploy | Done | Dark/light theme, loading/empty states, mobile review ([`MOBILE_RESPONSIVE_REVIEW.md`](MOBILE_RESPONSIVE_REVIEW.md)), Vercel production deploy, secrets audit, performance/streaming UX, Novus.ai |
+| Submit | In progress | Demo video, README, public GitHub, Devpost submission |
 
-**Still open (tracked in BUILD_TIMELINE, not product scope above):** production deployment; Novus.ai integration; hackathon submission assets.
+**Still open (tracked in BUILD_TIMELINE, not product scope above):** hackathon submission assets (demo video, README, Devpost).
 
 Product behaviour is defined in the sections above; the timeline tracks delivery only.
 
@@ -354,5 +377,5 @@ Full refinement log (figure freshness, severity cross-check, `risk_category` tag
 
 - The app requires a valid `ANTHROPIC_API_KEY` at runtime — there is no mock/offline mode
 - Claude responses are non-deterministic; the same product idea may produce different results on each run
-- The `research_insight` field is currently generated by Claude from training knowledge, not live web search — live grounding may be added in Mode 2 or Polish & Deploy (see BUILD_TIMELINE.md)
+- The `research_insight` field is currently generated by Claude from training knowledge, not live web search — live grounding may be added in a future release (see [`BUILD_TIMELINE.md`](BUILD_TIMELINE.md))
 - Analyses are not persisted; users must copy the report before leaving the page if they want to keep it

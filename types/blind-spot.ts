@@ -18,7 +18,7 @@ export interface ContextFields {
 }
 
 const CONTEXT_SECTION_LABELS: { key: keyof ContextFields; label: string }[] = [
-  { key: 'targetMarket', label: 'Target market' },
+  { key: 'targetMarket', label: 'Target market / users' },
   { key: 'stageOfDevelopment', label: 'Stage of development' },
   { key: 'teamConstraints', label: 'Team constraints' },
   { key: 'validated', label: "What's already been validated" },
