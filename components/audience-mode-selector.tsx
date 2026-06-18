@@ -65,7 +65,7 @@ export function AudienceModeSelector({ value, onChange }: AudienceModeSelectorPr
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Shapes how challenges are framed — PMF and runway vs governance and rollout.
+        Shapes how challenges are framed — proving people will pay and making funding last, vs approval processes and rolling out in a large organisation.
       </p>
     </div>
   )

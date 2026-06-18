@@ -1,7 +1,7 @@
 # Loading & Empty States Polish Plan
 
 **Status:** Implemented (Jun 2026)  
-**Phase:** Polish & Deploy (see [`BUILD_TIMELINE.md`](BUILD_TIMELINE.md))  
+**Phase:** Polish & Deploy — complete (see [`BUILD_TIMELINE.md`](BUILD_TIMELINE.md))  
 **Depends on (optional):** [`THEME_TOGGLE_PLAN.md`](THEME_TOGGLE_PLAN.md) — remaining semantic token pass on error banners deferred until theme work lands
 
 ## How to resume later

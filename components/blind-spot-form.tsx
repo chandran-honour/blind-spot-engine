@@ -279,7 +279,7 @@ export function BlindSpotForm() {
             ref={productIdeaRef}
             id="product-idea"
             name="product-idea"
-            placeholder="e.g. A mobile app that helps freelancers track their time and invoice clients automatically..."
+            placeholder={'e.g. An AI Dental Practice Assistant.\nAutomates patient intake and generates treatment summaries from consultations.'}
             defaultValue=""
             onKeyDown={handleKeyDown}
             onInput={() => {
@@ -324,7 +324,7 @@ export function BlindSpotForm() {
           <div className="mt-3 space-y-4">
             <div className="space-y-2">
               <label htmlFor="context-target-market" className="text-sm font-medium text-foreground">
-                Target market
+                Target market / users
               </label>
               <Input
                 id="context-target-market"
@@ -354,7 +354,7 @@ export function BlindSpotForm() {
               </label>
               <Textarea
                 id="context-team"
-                placeholder="e.g. Small team, limited clinical advisor time, no deep EHR integration yet"
+                placeholder="e.g. Small team with limited clinical advisor time and no spare capacity for deep integration with clinic patient record systems yet"
                 value={contextFields.teamConstraints}
                 onChange={(e) => updateContextField('teamConstraints', e.target.value)}
                 className={cn('min-h-[72px] resize-none', contextFieldClassName)}

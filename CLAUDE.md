@@ -191,7 +191,7 @@ The app will not function without `ANTHROPIC_API_KEY`. `NEXT_PUBLIC_SUPABASE_*` 
   @keyframes card-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @utility animate-card-in { animation: card-in 0.35s ease-out forwards; }
   ```
-- Dark theme is hardcoded via `bg-slate-950` on the main layout — no dark mode toggle yet
+- **Theme** — dark default via `next-themes` + `ModeToggle`; semantic tokens in `app/globals.css` (see [`docs/THEME_TOGGLE_PLAN.md`](docs/THEME_TOGGLE_PLAN.md))
 
 ---
 
@@ -216,14 +216,17 @@ To activate persistence later:
 - ~~Copy-to-clipboard on results~~ — done (`CopyReportButton`, `lib/format-analysis.ts`)
 - ~~Share link~~ — deferred (no DB persistence on hackathon demo)
 
-### Polish & Deploy (8–13 Jun)
+### Polish & Deploy (8–13 Jun) — done
 
 - ~~Mobile responsive review~~ — done ([`docs/MOBILE_RESPONSIVE_REVIEW.md`](docs/MOBILE_RESPONSIVE_REVIEW.md))
-- UI polish pass for video recording
-- Vercel production deployment
-- Secrets audit (`git grep -i "sk-ant"` before making repo public)
+- ~~Dark/light theme toggle~~ — done ([`docs/THEME_TOGGLE_PLAN.md`](docs/THEME_TOGGLE_PLAN.md))
+- ~~Loading and empty states~~ — done ([`docs/LOADING_EMPTY_STATES_PLAN.md`](docs/LOADING_EMPTY_STATES_PLAN.md))
+- ~~Vercel production deployment~~ — done
+- ~~Secrets audit~~ — done (`git grep -i "sk-ant"` before public repo)
+- ~~Performance / streaming UX~~ — done
+- ~~Novus.ai agent~~ — done
 
-### Submit (14–20 Jun)
+### Submit (14–20 Jun) — in progress
 
 - Demo video (2–3 min, Loom/YouTube)
 - Hackathon write-up and README
