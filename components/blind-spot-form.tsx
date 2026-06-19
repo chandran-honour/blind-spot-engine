@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { ResultsPanel } from '@/components/results-panel'
 import { AudienceModeSelector } from '@/components/audience-mode-selector'
 import { cn } from '@/lib/utils'
+import { isProductAnalysisComplete } from '@/lib/analysis-guards'
 import {
   buildContextString,
   type AudienceMode,
@@ -33,6 +34,7 @@ export function BlindSpotForm() {
   const audienceModeRef = useRef<AudienceMode>('startup')
   const contextFieldsRef = useRef<ContextFields>(EMPTY_CONTEXT_FIELDS)
   const isLoadingRef = useRef(false)
+  const prevIsLoadingRef = useRef(false)
 
   const [audienceMode, setAudienceMode] = useState<AudienceMode>('startup')
   const [contextFields, setContextFields] = useState<ContextFields>(EMPTY_CONTEXT_FIELDS)
@@ -201,6 +203,11 @@ export function BlindSpotForm() {
         }
       }
       setError(message)
+      pendo.track('analysis_failed', {
+        audience_mode: audienceModeRef.current,
+        error_type: err instanceof Error && err.name === 'AbortError' ? 'timeout' : 'error',
+        error_message: message,
+      })
       scrollResultsIntoView()
       console.error('Analysis error:', err)
     } finally {
@@ -237,6 +244,11 @@ export function BlindSpotForm() {
     setValidationError(null)
     scrollResultsIntoView()
 
+    pendo.track('analysis_submitted', {
+      audience_mode: audienceModeRef.current,
+      has_context: Object.values(contextFieldsRef.current).some((v) => v.trim() !== ''),
+    })
+
     void executeAnalysis(productIdeaValue)
   }
 
@@ -258,6 +270,28 @@ export function BlindSpotForm() {
       button.removeEventListener('touchend', activate)
     }
   }, [])
+
+  useEffect(() => {
+    const wasLoading = prevIsLoadingRef.current
+    prevIsLoadingRef.current = isLoading
+    if (!wasLoading || isLoading) return
+    if (error) return
+    if (!result) return
+
+    if (isProductAnalysisComplete(result)) {
+      pendo.track('analysis_completed', {
+        audience_mode: audienceMode,
+        persona_count: (result.excluded_personas ?? []).length,
+        challenge_count: (result.stakeholder_challenges ?? []).length,
+      })
+    } else {
+      pendo.track('analysis_incomplete', {
+        audience_mode: audienceMode,
+        persona_count: (result.excluded_personas ?? []).length,
+        challenge_count: (result.stakeholder_challenges ?? []).length,
+      })
+    }
+  }, [isLoading, error, result, audienceMode])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
