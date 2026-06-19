@@ -26,11 +26,13 @@ export function CopyReportButton({ analysis }: CopyReportButtonProps) {
     const text = formatAnalysisForClipboard(analysis)
 
     if (await copyTextToClipboard(text)) {
+      pendo.track('report_exported', { method: 'clipboard' })
       markCopied()
       return
     }
 
     if (await shareReportText(text)) {
+      pendo.track('report_exported', { method: 'share_sheet' })
       markCopied()
       return
     }
@@ -98,6 +100,7 @@ export function CopyReportButton({ analysis }: CopyReportButtonProps) {
                   manualRef.current?.select()
                   void copyTextToClipboard(manualText).then((ok) => {
                     if (ok) {
+                      pendo.track('report_exported', { method: 'manual_copy' })
                       setShowManual(false)
                       markCopied()
                     }
