@@ -12,7 +12,6 @@
 # next.js
 /.next/
 /out/
-/Users/
 
 # production
 /build
@@ -20,6 +19,7 @@
 # misc
 .DS_Store
 *.pem
+ANTHROPIC_KEY
 
 # debug
 npm-debug.log*

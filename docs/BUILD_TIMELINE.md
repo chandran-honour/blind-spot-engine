@@ -78,13 +78,13 @@ Product behaviour and acceptance criteria: `[REQUIREMENTS.md](REQUIREMENTS.md)`
 
 ---
 
-## 🔄 SUBMIT — Mon 14 – Sat 20 Jun (2h/day × 7 = ~14h)
+## SUBMIT — Mon 14 – Sat 20 Jun (2h/day × 7 = ~14h)
 
-- [ ] Demo video recording
-- [ ] Hackathon submission write-up
-- [ ] README finalised
-- [ ] Public GitHub repo (after secrets audit: `git grep -i "sk-ant"`)
-- [ ] Devpost submission completed before 20 Jun deadline
+- [x] Demo video recording
+- [x] Hackathon submission write-up
+- [x] README finalised
+- [x] Public GitHub repo (after secrets audit: `git grep -i "sk-ant"`)
+- [x] Devpost submission completed before 20 Jun deadline
 
 ---
 
@@ -99,7 +99,7 @@ Product behaviour and acceptance criteria: `[REQUIREMENTS.md](REQUIREMENTS.md)`
 | Mode 1 — Core          | 30–31 May | 9h       | ✅ Done         |
 | Mode 2 — AI Enrichment | 1–7 Jun   | 24h      | ✅ Done         |
 | Polish & Deploy        | 8–13 Jun  | 18h      | ✅ Done         |
-| Submit                 | 14–20 Jun | 14h      | 🔄 In progress |
+| Submit                 | 14–20 Jun | 14h      | ✅ Done         |
 | **Total**              |           | **~75h** |                |
 
 

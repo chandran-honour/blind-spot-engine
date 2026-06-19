@@ -16,7 +16,7 @@
 - Helps families share medication schedules, appointments, and home-care tasks for elderly relatives across multiple caregivers.
 - Target market: Adult children and extended family members coordinating care for aging parents who live independently or with part-time home help.
 - Stage of development: Shared calendar and task list MVP with med reminders; no professional caregiver marketplace or clinical integrations yet.
-- Team constraints: English-only; no HIPAA-covered provider workflows in v1; relies on family-entered data rather than pharmacy or EHR feeds.
+- Team constraints: English only; version 1 is not built for healthcare providers who must follow strict US patient privacy rules; families enter information themselves rather than pulling it from pharmacies or clinic patient record systems.
 - What has already been validated: Secondary caregivers want visibility when the primary caregiver is unavailable; families engage when updates require less than one minute to post.
 
 3. IT Finance Forecaster

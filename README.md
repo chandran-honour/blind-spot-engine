@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Blind Spot Engine
 
-## Getting Started
+Pressure-test your product idea before you commit. Blind Spot Engine surfaces who you're **not** designing for and stress-tests your assumptions across business, product, technical, and delivery lenses — then lets you copy a markdown report to share.
 
-First, run the development server:
+**[Live demo →](https://www.blindspotengine.app)**
+
+Built for the [Mind the Product World Product Hackathon](https://mindtheproduct.devpost.com) (June 2026). Portfolio project for AI product management.
+
+---
+
+## What it does
+
+1. **Excluded personas** — Identifies 3–5 people your product will *not* serve well, with significance, exclusion type, and design implications.
+2. **Stakeholder challenge** — Runs eight structured challenges (two per lens: Business & Finance, Product & PM, Technical & Engineering, Delivery & Operations).
+
+Choose **startup/founder** or **enterprise PM** framing, optionally add structured context, and run one analysis. Results stream in on desktop; copy the full report when complete.
+
+- No account required
+- Nothing saved to a database — results exist in your browser session only
+- Not legal advice — regulated-domain risks are surfaced as questions to explore
+
+---
+
+## Tech stack
+
+| Layer | Choice |
+|-------|--------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| UI | Tailwind CSS v4, shadcn/ui, dark/light theme |
+| AI | Anthropic Claude (`claude-sonnet-4-6`) |
+| Deploy | Vercel |
+
+---
+
+## Local development
+
+### Prerequisites
+
+- Node.js 18+
+- An [Anthropic API key](https://console.anthropic.com/)
+
+### Setup
+
+```bash
+git clone https://github.com/chandran-honour/blind-spot-engine.git
+cd blind-spot-engine
+npm install
+```
+
+Create `.env.local` in the project root:
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Start the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`npm run dev` uses webpack. For Turbopack: `npm run dev:turbo`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+There is no offline or mock mode — a valid `ANTHROPIC_API_KEY` is required.
 
-## Learn More
+### Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Development server (webpack) |
+| `npm run build` | Production build |
+| `npm run start` | Run production build locally |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project docs
 
-## Deploy on Vercel
+| Doc | Description |
+|-----|-------------|
+| [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | Product requirements and behaviour |
+| [`docs/BUILD_TIMELINE.md`](docs/BUILD_TIMELINE.md) | Build plan and phase checklist |
+| [`docs/TESTPLAN.md`](docs/TESTPLAN.md) | Test product ideas and scoring rubric |
+| [`docs/PROMPTREFINMENTS.md`](docs/PROMPTREFINMENTS.md) | Prompt refinement log |
+| [`CLAUDE.md`](CLAUDE.md) | Cursor / AI assistant context |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Limitations
+
+- AI output is non-deterministic — the same idea may produce different results each run
+- Analyses are not persisted (Supabase schema exists as scaffold only)
+- `research_insight` fields are generated from model knowledge, not live web search
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
