@@ -224,10 +224,8 @@ Phase dates, hour budget, and checkboxes live in [`BUILD_TIMELINE.md`](BUILD_TIM
 |---|---|---|
 | Prep → Mode 1 | Done | Core UI, streaming API, error handling; Supabase scaffold only; persistence off for demo |
 | Mode 2 — AI Enrichment | Done | Audience mode, structured context, legends, copy report, progressive reveal, prompt refinements ([`PROMPTREFINMENTS.md`](PROMPTREFINMENTS.md)) |
-| Polish & Deploy | Done | Dark/light theme, loading/empty states, mobile review ([`MOBILE_RESPONSIVE_REVIEW.md`](MOBILE_RESPONSIVE_REVIEW.md)), Vercel production deploy, secrets audit, performance/streaming UX, Novus.ai |
-| Submit | In progress | Demo video, README, public GitHub, Devpost submission |
-
-**Still open (tracked in BUILD_TIMELINE, not product scope above):** hackathon submission assets (demo video, README, Devpost).
+| Polish & Deploy | Done | Dark/light mode, loading/empty states, mobile responsive review ([`MOBILE_RESPONSIVE_REVIEW.md`](MOBILE_RESPONSIVE_REVIEW.md)), Vercel + custom domain, Novus/Pendo, secrets audit |
+| Submit | Done | Demo video, hackathon write-up, README, public repo, Devpost submission |
 
 Product behaviour is defined in the sections above; the timeline tracks delivery only.
 
