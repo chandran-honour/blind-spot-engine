@@ -25,17 +25,18 @@ export default function Home() {
           </p>
         </header>
 
+        <p
+          role="note"
+          className="mb-10 rounded-lg border border-border bg-muted/40 px-4 py-3 text-center text-xs leading-relaxed text-muted-foreground"
+        >
+          Demonstration only — product ideas and context you enter are not saved. Results
+          exist in this browser session only and are cleared when you refresh or leave the
+          page.
+        </p>
+
         <BlindSpotForm />
 
-        <footer className="mt-16 pt-8 border-t border-border text-center space-y-4">
-          <p
-            role="note"
-            className="text-xs leading-relaxed text-muted-foreground max-w-md mx-auto"
-          >
-            Demonstration only — product ideas and context you enter are not saved. Results
-            exist in this browser session only and are cleared when you refresh or leave the
-            page.
-          </p>
+        <footer className="mt-16 pt-8 border-t border-border text-center">
           <div className="inline-flex items-center gap-2 footer-brand-pill text-xs font-medium px-3 py-1.5 rounded-full border">
             <span className="w-1.5 h-1.5 rounded-full footer-brand-dot animate-pulse" />
             Powered by Claude
