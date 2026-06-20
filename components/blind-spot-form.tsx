@@ -439,10 +439,10 @@ export function BlindSpotForm() {
 
       <p
         role="note"
-        className="text-center text-xs leading-relaxed text-muted-foreground"
+        className="rounded-lg border border-muted-foreground/45 bg-muted/40 px-4 py-3 text-center text-sm font-bold leading-relaxed text-muted-foreground"
       >
         This is a live demo — no account needed. Nothing is kept after you leave this page
-        — use Copy report to save your results.
+        — results can be exported once the analysis completes.
       </p>
 
       <ResultsPanel
