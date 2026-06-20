@@ -437,6 +437,14 @@ export function BlindSpotForm() {
         </button>
       </div>
 
+      <p
+        role="note"
+        className="text-center text-xs leading-relaxed text-muted-foreground"
+      >
+        This is a live demo — no account needed. Nothing is kept after you leave this page
+        — use Copy report to save your results.
+      </p>
+
       <ResultsPanel
         result={result}
         isLoading={isLoading}
