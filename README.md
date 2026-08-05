@@ -13,7 +13,7 @@ Built for the [Mind the Product World Product Hackathon](https://mindtheproduct.
 1. **Excluded personas** — Identifies 3–5 people your product will *not* serve well, with significance, exclusion type, and design implications.
 2. **Stakeholder challenge** — Runs eight structured challenges (two per lens: Business & Finance, Product & PM, Technical & Engineering, Delivery & Operations).
 
-Choose **startup/founder** or **enterprise PM** framing, optionally add structured context, and run one analysis. Results stream in on desktop; copy the full report when complete.
+Choose **startup/founder** or **enterprise PM** framing, optionally add structured context, and run one analysis. Results stream in as the analysis runs; copy the full report when complete.
 
 - No account required
 - Nothing saved to a database — results exist in your browser session only

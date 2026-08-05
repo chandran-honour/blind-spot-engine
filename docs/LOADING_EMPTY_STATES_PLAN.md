@@ -22,7 +22,7 @@ This plan is **complete**. For theme-related polish, see `THEME_TOGGLE_PLAN.md`.
 | **Validation empty** | `blind-spot-form.tsx` | Inline message under product idea textarea |
 | **Pre-run idle** | `components/idle-results-placeholder.tsx` | Friendly placeholder below form |
 
-**Streaming (Jun 2026):** API streams chunked JSON again. Desktop reads the body incrementally for progressive reveal; mobile buffers the full response (`response.text()` on coarse pointer) — unchanged mobile UX.
+**Streaming (Aug 2026):** API streams chunked JSON. Desktop and mobile both use `ReadableStream` progressive reveal via `partial-json`. Touch devices (`pointer: coarse`) throttle UI updates (~200ms) to avoid Android re-render jank. Client abort covers the full request (headers + body), aligned with the route `maxDuration`.
 
 Reference: [`REQUIREMENTS.md`](REQUIREMENTS.md), [`CLAUDE.md`](CLAUDE.md), [`lib/analysis-guards.ts`](lib/analysis-guards.ts).
 
@@ -48,6 +48,7 @@ Reference: [`REQUIREMENTS.md`](REQUIREMENTS.md), [`CLAUDE.md`](CLAUDE.md), [`lib
 ### 3. Edge cases (verified)
 
 - [x] Mobile buffered response path — same loading/empty behavior as desktop stream
+- [x] Progressive streaming on mobile (Aug 2026) — throttled UI updates on coarse pointer; abort covers full body; clearer network/timeout errors
 - [x] `isLoading` cleared in `finally` block
 - [x] Re-run clears previous results immediately (`setResult(null)` on submit)
 

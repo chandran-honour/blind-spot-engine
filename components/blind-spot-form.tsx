@@ -26,6 +26,23 @@ const EMPTY_CONTEXT_FIELDS: ContextFields = {
 const contextFieldClassName =
   'bg-input/80 border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring/50 focus-visible:border-ring text-sm'
 
+/** Align with Vercel route maxDuration so long Claude runs do not abort mid-body. */
+const ANALYSIS_TIMEOUT_MS = 120_000
+
+/** Throttle progressive setResult on touch devices to avoid Android re-render jank. */
+const COARSE_POINTER_STREAM_UI_MS = 200
+
+function isAbortError(err: unknown): boolean {
+  return err instanceof Error && err.name === 'AbortError'
+}
+
+function isNetworkFetchError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false
+  if (err.name === 'TypeError') return true
+  const msg = err.message.toLowerCase()
+  return msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed')
+}
+
 export function BlindSpotForm() {
   const productIdeaRef = useRef<HTMLTextAreaElement>(null)
   const runInFlightRef = useRef(false)
@@ -122,13 +139,15 @@ export function BlindSpotForm() {
 
   const executeAnalysis = async (productIdeaValue: string) => {
     const context = buildContextString(contextFieldsRef.current)
-    const useStreaming =
-      typeof window !== 'undefined' && !window.matchMedia('(pointer: coarse)').matches
+    const throttleUiMs =
+      typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
+        ? COARSE_POINTER_STREAM_UI_MS
+        : 0
+
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => controller.abort(), ANALYSIS_TIMEOUT_MS)
 
     try {
-      const controller = new AbortController()
-      const timeoutId = window.setTimeout(() => controller.abort(), 90_000)
-
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,8 +158,6 @@ export function BlindSpotForm() {
         }),
         signal: controller.signal,
       })
-
-      window.clearTimeout(timeoutId)
 
       if (!response.ok) {
         let detail = ''
@@ -153,64 +170,78 @@ export function BlindSpotForm() {
         throw new Error(`The analysis failed (${response.status})${detail}. Please try again.`)
       }
 
-      if (useStreaming && response.body) {
-        const reader = response.body.getReader()
-        const decoder = new TextDecoder()
-        let fullText = ''
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) {
-              fullText += decoder.decode()
-              break
-            }
-            fullText += decoder.decode(value, { stream: true })
-
-            try {
-              const parsed = parse(fullText) as Partial<ProductAnalysis>
-              if (parsed && typeof parsed === 'object') {
-                setResult(parsed)
-              }
-            } catch {
-              // Unparseable chunk — continue streaming
-            }
-          }
-
-          applyAnalysisText(fullText)
-        } catch (streamErr) {
-          if (fullText.trim()) {
-            try {
-              applyAnalysisText(fullText)
-              return
-            } catch {
-              // Fall through to stream error
-            }
-          }
-          throw streamErr
-        }
-      } else {
+      if (!response.body) {
         const fullText = await response.text()
         applyAnalysisText(fullText)
+        return
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let fullText = ''
+      let lastUiAt = 0
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) {
+            fullText += decoder.decode()
+            break
+          }
+          fullText += decoder.decode(value, { stream: true })
+
+          const now = Date.now()
+          if (throttleUiMs > 0 && now - lastUiAt < throttleUiMs) {
+            continue
+          }
+
+          try {
+            const parsed = parse(fullText) as Partial<ProductAnalysis>
+            if (parsed && typeof parsed === 'object') {
+              setResult(parsed)
+              lastUiAt = now
+            }
+          } catch {
+            // Unparseable chunk — continue streaming
+          }
+        }
+
+        applyAnalysisText(fullText)
+      } catch (streamErr) {
+        if (fullText.trim()) {
+          try {
+            applyAnalysisText(fullText)
+            return
+          } catch {
+            // Fall through to stream error
+          }
+        }
+        throw streamErr
       }
     } catch (err) {
       let message = 'Something went wrong. Please try again.'
-      if (err instanceof Error) {
-        if (err.name === 'AbortError') {
-          message = 'The analysis timed out. Please try again.'
-        } else {
-          message = err.message
-        }
+      let errorType: 'timeout' | 'network' | 'error' = 'error'
+      if (isAbortError(err)) {
+        message =
+          'The analysis timed out before it finished. Please try again — on mobile, keep this tab open while it runs.'
+        errorType = 'timeout'
+      } else if (isNetworkFetchError(err)) {
+        message =
+          'The connection dropped before the analysis finished. Check your network, keep this tab open, and try again.'
+        errorType = 'network'
+      } else if (err instanceof Error) {
+        message = err.message
       }
       setError(message)
       pendo.track('analysis_failed', {
         audience_mode: audienceModeRef.current,
-        error_type: err instanceof Error && err.name === 'AbortError' ? 'timeout' : 'error',
+        error_type: errorType,
         error_message: message,
       })
       scrollResultsIntoView()
       console.error('Analysis error:', err)
     } finally {
+      window.clearTimeout(timeoutId)
       isLoadingRef.current = false
       setIsLoading(false)
       runInFlightRef.current = false

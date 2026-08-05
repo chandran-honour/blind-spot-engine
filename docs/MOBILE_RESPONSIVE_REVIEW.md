@@ -73,7 +73,7 @@
 
 - [x] Idle placeholder (`IdleResultsPlaceholder`) reads well on narrow screens
 - [x] Loading skeleton cards fit within viewport; no badge row overflow
-- [x] On mobile (coarse pointer): full response buffers then renders — confirm acceptable wait UX (~30–60s) with loading message visible throughout
+- [x] On mobile (coarse pointer): progressive stream with throttled UI updates (~200ms); confirm cards appear as complete objects arrive and loading message stays visible (~30–90s)
 - [x] Error and warning banners wrap text; **Try again** button is tappable
 
 ### Summary & cards
@@ -104,7 +104,7 @@
 ## Performance & polish
 
 - [x] First Contentful Paint feels acceptable on mobile network (test on 4G throttling in DevTools if no device)
-- [x] No layout shift when results stream in (desktop) or appear all at once (mobile)
+- [x] No layout shift when results stream in (desktop and mobile progressive reveal)
 - [x] `animate-card-in` does not cause jank on lower-end Android
 - [x] Footer “Powered by Claude” pill does not overlap results on long scroll
 
