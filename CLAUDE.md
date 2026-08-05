@@ -122,9 +122,11 @@ The app will not function without `ANTHROPIC_API_KEY`. `NEXT_PUBLIC_SUPABASE_*` 
 
 ### Client-side streaming (`components/blind-spot-form.tsx`)
 
-- Uses `fetch` with `ReadableStream` reader
+- Uses `fetch` with `ReadableStream` reader on all devices (desktop and mobile)
 - Parses each chunk with `parse()` from `partial-json` package
-- Sets `result` state as a `Partial<ProductAnalysis>` on each chunk
+- Sets `result` state as a `Partial<ProductAnalysis>` as the stream progresses (throttled ~200ms on `pointer: coarse` to reduce Android re-render jank)
+- AbortController timeout (120s) covers the full request including body read — not cleared when headers arrive
+- Mid-stream network drops attempt to apply any buffered JSON already received; otherwise show a clear connection/timeout message
 - Cards render progressively as each object becomes complete
 
 ### Progressive reveal & copy report (`components/results-panel.tsx`)
